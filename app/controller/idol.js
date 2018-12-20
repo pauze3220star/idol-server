@@ -26,7 +26,7 @@ class IdolController extends Controller {
     };
 
     async getMyIdols() {
-        await this.getIdolList(this.ctx.user.userId);
+        await this.getIdolList(this.ctx.user.UserId);
     }
 
     async getMarketIdols() {
@@ -56,7 +56,7 @@ class IdolController extends Controller {
         let msg = message.returnObj('zh');
 
         if (ctx.user.UserId > 0) {
-            await ctx.service.idolService.like(ctx.user.UserId, tokenId);
+            await ctx.service.idolService.like(ctx.user.UserId, parseInt(tokenId));
             ctx.body = msg.success;
             return;
         }

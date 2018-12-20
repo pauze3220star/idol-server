@@ -36,7 +36,7 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId '
             + 'FROM idols '
-            + 'WHERE (0=:userId OR UserId=:userId) '
+            + 'WHERE (0=:UserId OR UserId=:UserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
             + 'AND (0=:isRental OR IsRental=:isRental) ';
 
@@ -187,7 +187,7 @@ class IdolService extends Service {
         }
 
         + 'LIMIT :offset, :limit ';
-        let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { userId, isForSale, isRental, offset, limit } });
+        let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
 
         return idols;
     }
