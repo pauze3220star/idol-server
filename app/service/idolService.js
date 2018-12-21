@@ -85,70 +85,109 @@ class IdolService extends Service {
         let hasbio = 0; //已有简介
         let characteristics = new Array(); //特征
 
-        if (attributes != undefined)
+        if (attributes != undefined) {
             attrs = attributes.split(",");
+            for (var i = 0; i < attrs.length; i++) {
+                if (attrs[i] == "cooldownready") {
+                    cooldownready = 1;
+                    continue;
+                }
 
-        for (var i = 0; i < attrs.length; i++) {
-            if (attrs[i] == "cooldownready") {
-                cooldownready = 1;
-                continue;
-            }
+                if (attrs[i] == "hasname") {
+                    hasname = 1;
+                    continue;
+                }
+                if (attrs[i] == "hasbio") {
+                    hasbio = 1;
+                    continue;
+                }
 
-            if (attrs[i] == "hasname") {
-                hasname = 1;
-                continue;
-            }
-            if (attrs[i] == "hasbio") {
-                hasbio = 1;
-                continue;
-            }
-
-            if (idolAttributes.Attributes.indexOf(attrs[i]) >= 0) {
-                characteristics.push(attrs[i]);
-                continue;
+                if (idolAttributes.Attributes.indexOf(attrs[i]) >= 0) {
+                    characteristics.push(attrs[i]);
+                    continue;
+                }
             }
         }
+
+        //todo cooldownready 数据库需要记录上次生育时间
+        //cooldownEndBlock secondsPerBlock
+
+        //todo 待验证
+        if (hasname === 1) {
+            sql += " AND NickName IS NOT NULL "
+        }
+
+        //todo 待验证
+        if (hasbio === 1) {
+            sql += " AND Bio IS NOT NULL "
+        }
+
+        //todo characteristics 特征
+
 
         //代，冷却速度，价格，like
-        let conditions = filters.split(",");
+        if (filters != undefined) {
+            let conditions = filters.split(",");
 
-        let iterationStart = 0;
-        let iterationEnd = 999999
-        let cooldowns; //冷却速度
-        let priceStart = 0;
-        let priceEnd;
-        let likeAddress;
+            let iterationStart = 0;
+            let iterationEnd = 999999
+            let cooldowns; //冷却速度
+            let priceStart = 0;
+            let priceEnd;
+            let likeAddress;
+            let name;
 
-        for (var i = 1; i < conditions.length; i++) {
-            var conditionX = conditions[i].split(":");
-            switch (conditionX[0]) {
-                case "iteration":
-                    let iterations = conditionX[1].split("~");
-                    iterationStart = parseInt(iterations[0]);
-                    iterationEnd = iterations.length > 1 ? parseInt(iterations[1]) : 999999;
-                    break;
-                case "cooldown":
-                    cooldowns = conditionX[1].split("|");
-                    break;
-                case "price":
-                    let prices = conditionX[1].split("~");
-                    priceStart = parseFloat(prices[0]);
-                    if (prices.length > 1) {
-                        priceEnd = parseFloat(prices[1]);
+            for (var i = 1; i < conditions.length; i++) {
+                var conditionX = conditions[i].split(":");
+                switch (conditionX[0]) {
+                    case "iteration":
+                        let iterations = conditionX[1].split("~");
+                        iterationStart = parseInt(iterations[0]);
+                        iterationEnd = iterations.length > 1 ? parseInt(iterations[1]) : 999999;
+                        break;
+                    case "cooldown":
+                        cooldowns = conditionX[1].split("|");
+                        break;
+                    case "price":
+                        let prices = conditionX[1].split("~");
+                        priceStart = parseFloat(prices[0]);
+                        if (prices.length > 1) {
+                            priceEnd = parseFloat(prices[1]);
+                        }
+                        break;
+                    case "liked":
+                        likeAddress = conditionX[1];
+                        break;
+                    case "name":
+                        name = conditionX[1];
+                        break;
+                }
+            }
+
+            //代
+            sql += " AND Generation>=" + iterationStart + " AND Generation<=" + iterationEnd; //已做整形转换，防止sql注入
+
+            //冷却速度
+            if (cooldowns != undefined) {
+                sqlCooldowns = " AND Cooldown in ("
+                cooldowns.forEach(cooldown => {
+                    let index = idolAttributes.Cooldowns.indexOf(cooldown);
+                    if (index >= 0) {
+                        sqlCooldowns += index + ",";
                     }
-                    break;
-                case "liked":
-                    likeAddress = conditionX[1];
-                    break;
+                });
+                sqlCooldowns = sqlCooldowns.substring(0, sqlCooldowns.lastIndexOf(","));
+                sqlCooldowns += ") ";
+                sql += sqlCooldowns;
+            }
+
+            //价格
+
+            //昵称name
+            if (name != undefined) {
+                sql += " AND NickName=:NickName ";
             }
         }
-
-        //代
-        sql += " AND Generation>=" + iterationStart + " AND Generation<=" + iterationEnd; //已做整形转换，防止sql注入
-
-        //冷却速度 todo
-
-        //价格
 
         //排序
         switch (sort) {
@@ -206,7 +245,7 @@ class IdolService extends Service {
             + 'DELETE FROM userlikes WHERE TokenId=:TokenId AND UserId=:TokenId; '
             + 'UPDATE idols SET LikeCount=LikeCount-1 WHERE TokenId=:TokenId AND ROW_COUNT() > 0;'
             + 'COMMIT';
-        let idols = await this.ctx.model.query(sql, { raw: true, replacements: { UserId: userId, TokenId: tokenId } });
+        let idols = await this.ctx.model.query(sql, { raw: true, replacements: { UserId: userId, TokenId: tokenId, NickName: name } });
     }
 
 }
