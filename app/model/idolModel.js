@@ -7,7 +7,7 @@ module.exports = app => {
         NickName: STRING,
         Genes: STRING,
         BirthTime: INTEGER,
-        Introduction: STRING,
+        Bio: STRING,
         Pic: STRING,
         Generation: INTEGER,
         Cooldown: INTEGER,
@@ -19,8 +19,6 @@ module.exports = app => {
         LikeCount: INTEGER,
         IsForSale: INTEGER,
         IsRental: INTEGER,
-        IsLike: INTEGER,
-        LikeId: INTEGER
     },
         {
             timestamps: false,

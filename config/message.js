@@ -2,29 +2,41 @@
 module.exports = {
 
   success: 0,
+  failure: 1,
   addressNotFound: 10001,
-  noLogin: 10002,
+  notLogin: 10002,
+  parameterError: 10003,
+
   idolNotFound: 20001,
-
-
+  idolUpdateDenied: 20002,
+  idolUpdateFailure: 20003,
 
   returnObj(lang) {
 
     en = {
       lang: 'en',
       success: { code: this.success, message: 'success' },
+      failure: { code: this.failure, message: 'failure' },
       addressNotFound: { code: this.addressNotFound, message: 'address not found' },
-      noLogin: { code: this.noLogin, message: "no login" },
-      idolNotFound: { code: this.idolNotFound, message: "idol not found" },
+      notLogin: { code: this.notLogin, message: "not login" },
+      parameterError: { code: this.parameterError, message: "parameter error" },
 
+      idolNotFound: { code: this.idolNotFound, message: "idol not found" },
+      idolUpdateDenied: { code: this.idolUpdateDenied, message: "no permission" },
+      idolUpdateFailure: { code: this.idolUpdateFailure, message: "idol update failure" },
     };
 
     zh = {
       lang: 'zh',
       success: { code: this.success, message: '成功' },
+      failure: { code: this.failure, message: '失败' },
       addressNotFound: { code: this.addressNotFound, message: '未注册' },
-      noLogin: { code: this.noLogin, message: "未登录，请先登录" },
+      notLogin: { code: this.notLogin, message: "未登录，请先登录" },
+      parameterError: { code: this.parameterError, message: "参数错误" },
+
       idolNotFound: { code: this.idolNotFound, message: "找不到数据" },
+      idolUpdateDenied: { code: this.idolUpdateDenied, message: "没有权限" },
+      idolUpdateFailure: { code: this.idolUpdateFailure, message: "更新失败" },
     };
 
     let message;

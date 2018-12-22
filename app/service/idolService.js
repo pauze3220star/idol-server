@@ -2,6 +2,33 @@ const idolAttributes = require("../../config/idolAttributes");
 const Service = require('egg').Service;
 
 class IdolService extends Service {
+
+    async setName(tokenId, name, userId) {
+        let idol = await this.ctx.model.IdolModel.findOne({ where: { TokenId: tokenId, UserId: userId } });
+        if (idol == null)
+            return -1;
+
+        let rtn = 0;
+        await idol.update({ NickName: name }).catch(errors => {
+            rtn = -2;
+        });
+
+        return rtn;
+    };
+
+    async setBio(tokenId, bio, userId) {
+        let idol = await this.ctx.model.IdolModel.findOne({ where: { TokenId: tokenId, UserId: userId } });
+        if (idol == null)
+            return -1;
+
+        let rtn = 0;
+        await idol.update({ Bio: bio }).catch(errors => {
+            rtn = -2;
+        });
+
+        return rtn;
+    };
+
     async getIdol(tokenId, userId) {
         const ctx = this.ctx;
         let sql;
@@ -235,17 +262,45 @@ class IdolService extends Service {
         let sql = 'START TRANSACTION; '
             + 'UPDATE idols SET LikeCount=LikeCount+1 WHERE TokenId=:TokenId AND NOT EXISTS ( SELECT 1 FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId); '
             + 'INSERT INTO userlikes (UserId, TokenId, CreateDate) '
-            + ' SELECT :TokenId, :UserId, UNIX_TIMESTAMP() FROM DUAL WHERE ROW_COUNT() > 0;'
+            + ' SELECT :UserId, :TokenId, UNIX_TIMESTAMP() FROM DUAL WHERE ROW_COUNT() > 0;'
             + 'COMMIT';
-        let idols = await this.ctx.model.query(sql, { raw: true, replacements: { UserId: userId, TokenId: tokenId } });
+        let updates = await this.ctx.model.query(sql, {
+            raw: true,
+            model: this.ctx.model.IdolModel,
+            replacements: { UserId: userId, TokenId: tokenId }
+        });
+        let affectedRows = 0;
+        if (updates != null && updates.length > 0) {
+            updates.forEach(function (item, i) {
+                if (item.affectedRows == undefined || item.affectedRows == 0) {
+                    return true;
+                }
+                affectedRows = affectedRows + item.affectedRows;
+            });
+        }
+        return affectedRows;
     }
 
     async unlike(userId, tokenId) {
         let sql = 'START TRANSACTION; '
-            + 'DELETE FROM userlikes WHERE TokenId=:TokenId AND UserId=:TokenId; '
+            + 'DELETE FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId; '
             + 'UPDATE idols SET LikeCount=LikeCount-1 WHERE TokenId=:TokenId AND ROW_COUNT() > 0;'
             + 'COMMIT';
-        let idols = await this.ctx.model.query(sql, { raw: true, replacements: { UserId: userId, TokenId: tokenId, NickName: name } });
+        let updates = await this.ctx.model.query(sql, {
+            raw: true,
+            model: this.ctx.model.IdolModel,
+            replacements: { UserId: userId, TokenId: tokenId }
+        });
+        let affectedRows = 0;
+        if (updates != null && updates.length > 0) {
+            updates.forEach(function (item, i) {
+                if (item.affectedRows == undefined || item.affectedRows == 0) {
+                    return true;
+                }
+                affectedRows = affectedRows + item.affectedRows;
+            });
+        }
+        return affectedRows;
     }
 
 }

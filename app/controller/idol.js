@@ -4,17 +4,76 @@ const idolAttributes = require("../../config/idolAttributes");
 const Controller = require('egg').Controller;
 
 class IdolController extends Controller {
+
+    async setName() {
+        const ctx = this.ctx;
+        const { tokenId, name } = ctx.request.body;
+        let msg = message.returnObj('zh');
+
+        if (tokenId == undefined || name == undefined || parseInt(tokenId).toString() == "NaN") {
+            ctx.body = msg.parameterError;
+            return;
+        }
+
+        if (ctx.user.UserId == 0) {
+            ctx.body = msg.notLogin;
+            return;
+        }
+
+        let ret = await ctx.service.idolService.setName(parseInt(tokenId), name, ctx.user.UserId);
+
+        if (ret == 0)
+            ctx.body = msg.success;
+        else if (ret == -1)
+            ctx.body = msg.idolUpdateDenied
+        else
+            ctx.body = msg.idolUpdateFailure
+    }
+
+    async setBio() {
+        const ctx = this.ctx;
+        const { tokenId, bio } = ctx.request.body;
+        let msg = message.returnObj('zh');
+
+        if (tokenId == undefined || bio == undefined || parseInt(tokenId).toString() == "NaN") {
+            ctx.body = msg.parameterError;
+            return;
+        }
+
+        if (ctx.user.UserId == 0) {
+            ctx.body = msg.notLogin;
+            return;
+        }
+
+        let ret = await ctx.service.idolService.setBio(parseInt(tokenId), bio, ctx.user.UserId);
+
+        if (ret == 0)
+            ctx.body = msg.success;
+        else if (ret == -1)
+            ctx.body = msg.idolUpdateDenied
+        else
+            ctx.body = msg.idolUpdateFailure
+    }
+
+
     async getIdol() {
         const ctx = this.ctx;
         const tokenId = parseInt(ctx.query.tokenId);
-
         let msg = message.returnObj('zh');
+
+        if (tokenId.toString() == "NaN") {
+            ctx.body = msg.parameterError;
+            return;
+        }
+
         let idol = await ctx.service.idolService.getIdol(tokenId, ctx.user.UserId);
 
         if (idol != null && idol.TokenId > 0) {
 
             if (idol.LikeId == null || idol.LikeId == 0)
                 idol.IsLike = 0;
+            else
+                idol.IsLike = 1;
 
             let retObj = msg.success;
             retObj.data = idol;
@@ -55,26 +114,44 @@ class IdolController extends Controller {
 
         let msg = message.returnObj('zh');
 
-        if (ctx.user.UserId > 0) {
-            await ctx.service.idolService.like(ctx.user.UserId, parseInt(tokenId));
-            ctx.body = msg.success;
+        if (parseInt(tokenId).toString() == "NaN") {
+            ctx.body = msg.parameterError;
             return;
         }
-        ctx.body = msg.noLogin;
+
+        if (ctx.user.UserId == 0) {
+            ctx.body = msg.notLogin;
+            return;
+        }
+
+        let rows = await ctx.service.idolService.like(ctx.user.UserId, parseInt(tokenId));
+        if (rows > 0)
+            ctx.body = msg.success;
+        else
+            ctx.body = msg.failure;
     }
 
-    async unlike(){
+    async unlike() {
         const ctx = this.ctx;
         const { tokenId } = ctx.request.body;
 
         let msg = message.returnObj('zh');
 
-        if (ctx.user.UserId > 0) {
-            await ctx.service.idolService.unlike(ctx.user.UserId, tokenId);
-            ctx.body = msg.success;
+        if (parseInt(tokenId).toString() == "NaN") {
+            ctx.body = msg.parameterError;
             return;
         }
-        ctx.body = msg.noLogin;
+
+        if (ctx.user.UserId == 0) {
+            ctx.body = msg.notLogin;
+            return;
+        }
+
+        let rows = await ctx.service.idolService.unlike(ctx.user.UserId, parseInt(tokenId));
+        if (rows > 0)
+            ctx.body = msg.success;
+        else
+            ctx.body = msg.failure;
     }
 }
 

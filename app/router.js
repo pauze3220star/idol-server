@@ -13,6 +13,9 @@ module.exports = app => {
   router.post('/user/register', controller.user.register);
   router.post('/user/getUserInfo', controller.user.getUserInfo);
 
+  router.post('/idol/setName', Passport.verify, controller.idol.setName);
+  router.post('/idol/setBio', Passport.verify, controller.idol.setBio);
+
   router.get('/idol/getIdol', Passport.verify, controller.idol.getIdol);
   router.get('/idol/getMyIdols', Passport.authorize, controller.idol.getMyIdols);
   router.get('/idol/getMarketIdols', controller.idol.getMarketIdols);

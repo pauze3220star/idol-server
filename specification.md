@@ -227,3 +227,65 @@ Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980
     "message":"未登录，请先登录"
 }
 ~~~
+
+### 8. 设置idol昵称
+* 接口地址：/idol/setName
+* 请求方式：POST
+* 请求参数：
+~~~json
+{
+    "tokenId":1,
+    "name":"chenhao"
+}
+~~~
+* 请求头：
+
+如果有cookie请带上，这是用户的登录信息。
+~~~
+Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980_4384=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjUsIkFkZHJlc3MiOiJhZHNmZHNmZHNmZHMxMWRmc2RzZmEiLCJpYXQiOjE1NDUyODY2NzEsImV4cCI6MTU0NTM3MzA3MX0.cPKzSnTw96zoQFAldR1Vkma0HLG2nGgdgdpxjFgo1lY; undefined_1544608605980_4384.sig=Pqqz-SZgb5Fzm3jA7BvbZsRu016fWhPHtDhlvXW7SnI
+~~~
+* 成功返回值：
+~~~json
+{
+    "code":0,
+    "message":"成功"
+}
+~~~
+* 失败返回值：
+~~~json
+{
+    "code":10002,
+    "message":"未登录，请先登录"
+}
+~~~
+
+### 9. 设置idol简介
+* 接口地址：/idol/setBio
+* 请求方式：POST
+* 请求参数：
+~~~json
+{
+    "tokenId":1,
+    "bio":"chenhao test"
+}
+~~~
+* 请求头：
+
+如果有cookie请带上，这是用户的登录信息。
+~~~
+Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980_4384=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjUsIkFkZHJlc3MiOiJhZHNmZHNmZHNmZHMxMWRmc2RzZmEiLCJpYXQiOjE1NDUyODY2NzEsImV4cCI6MTU0NTM3MzA3MX0.cPKzSnTw96zoQFAldR1Vkma0HLG2nGgdgdpxjFgo1lY; undefined_1544608605980_4384.sig=Pqqz-SZgb5Fzm3jA7BvbZsRu016fWhPHtDhlvXW7SnI
+~~~
+* 成功返回值：
+~~~json
+{
+    "code":0,
+    "message":"成功"
+}
+~~~
+* 失败返回值：
+~~~json
+{
+    "code":10002,
+    "message":"未登录，请先登录"
+}
+~~~
