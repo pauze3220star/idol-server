@@ -4,7 +4,7 @@ module.exports = appInfo => {
   const config = exports = {};
 
   // use for cookie sign key, should change to your own and keep security
-  config.keys = appInfo.name + '_1544608605980_4384';
+  config.keys = 'tron_Idol_1544608605980_4384';
 
   // 请修改jwt密钥和失效时间
   config.login = {
