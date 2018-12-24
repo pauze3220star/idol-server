@@ -196,7 +196,7 @@ class IdolService extends Service {
 
             //冷却速度
             if (cooldowns != undefined) {
-                sqlCooldowns = " AND Cooldown in ("
+                let sqlCooldowns = " AND Cooldown in ("
                 cooldowns.forEach(cooldown => {
                     let index = idolAttributes.Cooldowns.indexOf(cooldown);
                     if (index >= 0) {
