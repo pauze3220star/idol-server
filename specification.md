@@ -6,11 +6,22 @@
 * 请求参数：
 ~~~json
 {
-    "address":"TVjmtiAVdbox9LYtZ7eu8Bq7mHJFZCZ3dg",
+    "address":"TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY",
+    "timestamp":1545647087,
     "name":"chenhao",
-    "sign":"eff7d5dba32b4da32d9a67a519434d3f"
+    "sign":"0xe54bf08ce2dd7683732d5c6cff5f0d3a4bdccc053f76ecf7fee4052538d5a3e96f167a0ddf657b77f1d3d662dfaf8c1008eac3746e48e5f9cee4ba130082481a1b"
 }
 ~~~
+sign算法：
+~~~javascript
+var timestamp = Math.round(new Date().getTime() / 1000);
+let address = tronWeb.defaultAddress.base58; //当前用户的address
+let signMessage = "address=" + address + "&timestamp=" + timestamp; //拼出待签名字符串
+
+let hexStr = this.strToHex(signMessage); //转成十六进制
+let sign = await tronWeb.trx.signMessage(hexStr); //签名
+~~~
+
 * 返回值：
 ~~~json
 {
@@ -25,10 +36,21 @@
 * 请求参数：
 ~~~json
 {
-    "address":"TVjmtiAVdbox9LYtZ7eu8Bq7mHJFZCZ3dg",
-    "sign":"ab56b4d92b40713acc5af89985d4b786"
+    "address":"TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY",
+    "timestamp":1545647087,
+    "sign":"0xe54bf08ce2dd7683732d5c6cff5f0d3a4bdccc053f76ecf7fee4052538d5a3e96f167a0ddf657b77f1d3d662dfaf8c1008eac3746e48e5f9cee4ba130082481a1b"
 }
 ~~~
+sign算法：
+~~~javascript
+var timestamp = Math.round(new Date().getTime() / 1000);
+let address = tronWeb.defaultAddress.base58; //当前用户的address
+let signMessage = "address=" + address + "&timestamp=" + timestamp; //拼出待签名字符串
+
+let hexStr = this.strToHex(signMessage); //转成十六进制
+let sign = await tronWeb.trx.signMessage(hexStr); //签名
+~~~
+
 * 成功返回值：
 ~~~json
 {

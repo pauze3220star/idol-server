@@ -10,13 +10,13 @@ module.exports = appInfo => {
   config.login = {
     secretKey: 'xO18B58fgfsv1UafNOoYuyKt9cjmD9Oa', // jwt密钥
     expires: 60 * 60 * 24, // 超时时间24小时
-};
+  };
 
   // add your config here
   config.middleware = [];
 
-   // 配置端口号，主机名
-   config.cluster = {
+  // 配置端口号，主机名
+  config.cluster = {
     listen: {
       path: '',
       port: 7001,

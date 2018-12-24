@@ -8,27 +8,16 @@ const Controller = require('egg').Controller;
 class UserController extends Controller {
     async login() {
         const ctx = this.ctx;
-        const { address } = ctx.request.body;
-
-        await tronService.getBalance();
-        const str1 = "tron idol 111";
-        const str2 = "tron idol 222";
-
-        const address1 = "TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY";
-        const address2 = "TVjmtiAVdbox9LYtZ7eu8Bq7mHJFZCZ3dg";
-
-        let signValue = await tronService.signMessage(str1);
-        let a = await tronService.verifyMessage(str1, signValue, address1);
-        let b = await tronService.verifyMessage(str2, signValue, address1);
-        let c = await tronService.verifyMessage(str1, signValue, address2);
-
-        console.log("a=" + a);
-        console.log("b=" + b);
-        console.log("c=" + c);
-
+        const { address, timestamp, sign } = ctx.request.body;
         let msg = message.returnObj('zh');
-        let userId = await ctx.service.userService.login(address);
 
+        let signMessage = "address=" + address + "&timestamp=" + timestamp;
+        if (!await tronService.verifyMessage(signMessage, sign, address)) { //签名验证失败
+            ctx.body = msg.signError;
+            return;
+        }
+
+        let userId = await ctx.service.userService.login(address);
         if (userId <= 0) {
             ctx.body = msg.addressNotFound;
             return;
@@ -58,16 +47,54 @@ class UserController extends Controller {
 
     async register() {
         const ctx = this.ctx;
-        const { address, name } = ctx.request.body;
-
+        const { address, name, timestamp, sign } = ctx.request.body;
         let msg = message.returnObj('zh');
-        let result = ctx.service.userService.register(address, name);
 
-        ctx.body = msg.success;
+        let signMessage = "address=" + address + "&timestamp=" + timestamp;
+        if (!await tronService.verifyMessage(signMessage, sign, address)) { //签名验证失败
+            ctx.body = msg.signError;
+            return;
+        }
+
+        let result = await ctx.service.userService.register(address, name);
+        if (result)
+            ctx.body = msg.success;
+        else
+            ctx.body = msg.registerError;
+    }
+
+
+    async signtest() {
+        var timestamp = Math.round(new Date().getTime() / 1000);
+        let address = 'TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY';
+        let signMessage = "address=" + address + "&timestamp=" + timestamp;
+        let sign = await tronService.signMessage(signMessage);
+
+        this.ctx.body = {
+            "address": 'TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY',
+            "timestamp": timestamp,
+            "signMessage": signMessage,
+            "sign": sign
+        };
     }
 
     async getUserInfo() {
 
+        // await tronService.getBalance();
+        // const str1 = "tron idol 111";
+        // const str2 = "tron idol 222";
+
+        // const address1 = "TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY";
+        // const address2 = "TVjmtiAVdbox9LYtZ7eu8Bq7mHJFZCZ3dg";
+
+        // let signValue = await tronService.signMessage(str1);
+        // let a = await tronService.verifyMessage(str1, signValue, address1);
+        // let b = await tronService.verifyMessage(str2, signValue, address1);
+        // let c = await tronService.verifyMessage(str1, signValue, address2);
+
+        // console.log("a=" + a);
+        // console.log("b=" + b);
+        // console.log("c=" + c);
     };
 
 }

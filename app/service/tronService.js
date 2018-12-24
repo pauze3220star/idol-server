@@ -25,17 +25,17 @@ module.exports = {
     },
 
     //客户端签名
-    async signMessage(msg) {
-        let hexStr = this.strToHexCharCode(msg);
-        let signValue = await tronWeb.trx.signMessage(hexStr, privateKey);
-        return signValue;
+    async signMessage(message) {
+        let hexStr = this.strToHex(message);
+        let sign = await tronWeb.trx.signMessage(hexStr, privateKey);
+        return sign;
     },
 
     //服务端验证签名
-    async verifyMessage(msg, signValue, address) {
-        let hexStr = this.strToHexCharCode(msg);
+    async verifyMessage(message, sign, address) {
+        let hexStr = this.strToHex(message);
         let ret = false;
-        await tronWeb.trx.verifyMessage(hexStr, signValue, address, true, (err, res) => {
+        await tronWeb.trx.verifyMessage(hexStr, sign, address, true, (err, res) => {
             if (!err)
                 ret = true;
         });
@@ -43,7 +43,7 @@ module.exports = {
         return ret;
     },
 
-    strToHexCharCode(str) {
+    strToHex(str) {
         if (str === "")
             return "";
         var hexCharCode = [];

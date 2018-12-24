@@ -43,8 +43,9 @@ class IdolService extends Service {
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { TokenId: tokenId, UserId: userId } });
         if (idols != null && idols.length > 0) {
             let idol = idols[0];
-            idol.Attributes = "smile,open mouth";
-            idol.Labels = "cute,queen";
+            idol.Attributes = "smile,open mouth"; //todo
+            idol.Labels = "cute,queen"; //todo
+            idol.CooldownRemain = 0; //todo
             return idol;
         }
         return null;
