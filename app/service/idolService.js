@@ -37,7 +37,7 @@ class IdolService extends Service {
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
                 + 'WHERE i.TokenId=:TokenId';
         else
-            sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId FROM idols '
+            sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle FROM idols '
                 + 'WHERE TokenId=:TokenId';
 
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { TokenId: tokenId, UserId: userId } });
