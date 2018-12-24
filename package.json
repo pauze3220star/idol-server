@@ -9,7 +9,8 @@
     "egg-sequelize": "^4.2.0",
     "jsonwebtoken": "^8.4.0",
     "mysql2": "^1.6.4",
-    "sequelize": "^4.41.2"
+    "sequelize": "^4.41.2",
+    "tronweb": "^2.1.17"
   },
   "devDependencies": {
     "autod": "^3.0.1",

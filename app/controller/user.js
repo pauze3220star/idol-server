@@ -2,12 +2,29 @@
 const jwt = require('jsonwebtoken');
 const message = require('../../config/message');
 const config = require('../../config/config.default')('');
+const tronService = require("../service/tronService");
 const Controller = require('egg').Controller;
 
 class UserController extends Controller {
     async login() {
         const ctx = this.ctx;
         const { address } = ctx.request.body;
+
+        await tronService.getBalance();
+        const str1 = "tron idol 111";
+        const str2 = "tron idol 222";
+
+        const address1 = "TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY";
+        const address2 = "TVjmtiAVdbox9LYtZ7eu8Bq7mHJFZCZ3dg";
+
+        let signValue = await tronService.signMessage(str1);
+        let a = await tronService.verifyMessage(str1, signValue, address1);
+        let b = await tronService.verifyMessage(str2, signValue, address1);
+        let c = await tronService.verifyMessage(str1, signValue, address2);
+
+        console.log("a=" + a);
+        console.log("b=" + b);
+        console.log("c=" + c);
 
         let msg = message.returnObj('zh');
         let userId = await ctx.service.userService.login(address);
