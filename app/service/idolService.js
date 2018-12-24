@@ -33,7 +33,7 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql;
         if (userId > 0)
-            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId FROM idols i '
+            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
                 + 'WHERE i.TokenId=:TokenId';
         else
@@ -42,7 +42,10 @@ class IdolService extends Service {
 
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { TokenId: tokenId, UserId: userId } });
         if (idols != null && idols.length > 0) {
-            return idols[0];
+            let idol = idols[0];
+            idol.Attributes = "smile,open mouth";
+            idol.Labels = "cute,queen";
+            return idol;
         }
         return null;
     };
@@ -61,7 +64,7 @@ class IdolService extends Service {
         //&filters=iteration:1~2,cooldown:ur|ssr|sr|r|n,price:1~2,liked:0x834721d79edcf0851505bf47c605607030b086c1
 
         const ctx = this.ctx;
-        let sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId '
+        let sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle '
             + 'FROM idols '
             + 'WHERE (0=:UserId OR UserId=:UserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
@@ -254,6 +257,12 @@ class IdolService extends Service {
 
         + 'LIMIT :offset, :limit ';
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
+
+        // if (idols != null)
+        //     idols.forEach(idol => {
+        //         idol.Attributes = "smile,open mouth";
+        //         idol.Labels = "cute,queen";
+        //     });
 
         return idols;
     }
