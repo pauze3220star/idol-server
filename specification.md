@@ -83,34 +83,45 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
 {
     "code":0,
     "message":"",
-    "data":[
-        {
-            "TokenId":1,        //idol的编号
-            "NickName":"1",     //idol的名称
-            "UserId":5,         //address登录后，后台分配的用户Id
-            "Genes":"0",        //基因
-            "BirthTime":1,      //出生时间，unix时间戳
-            "Bio":"1",          //idol的自我介绍
-            "Generation":1,     //代
-            "Pic":"/idol/000c1668c6b2.jpg",
-            "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
-            "MatronId":0,       //母idol的tokenId
-            "SireId":0          //父idol的tokenId
-        },
-        {
-            "TokenId":2,
-            "NickName":"1",
-            "UserId":1,
-            "Genes":"0",
-            "BirthTime":0,
-            "Bio":"1",
-            "Generation":2,
-            "Pic":"/idol/00a1f298bbe0.jpg",
-            "Cooldown":0,
-            "MatronId":0,
-            "SireId":0
-        }
-    ]
+    "data":{
+        "count":9,
+        "rows":[
+            {
+                "TokenId":1,        //idol的编号
+                "NickName":"1",     //idol的名称
+                "UserId":5,         //address登录后，后台分配的用户Id
+                "Genes":"0",        //基因
+                "BirthTime":1,      //出生时间，unix时间戳
+                "Bio":"1",          //idol的自我介绍
+                "Generation":1,     //代
+                "Pic":"/idol/000c1668c6b2.jpg",
+                "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+                "MatronId":0,       //母idol的tokenId
+                "SireId":0          //父idol的tokenId
+                "HairColor":"black",//头发颜色
+                "EyeColor":"brown", //眼睛颜色
+                "HairStyle":"long hair", //发型
+                "LikeCount":1023 //点赞数
+            },
+            {
+                "TokenId":11,
+                "NickName":"XPM",
+                "UserId":5,
+                "Genes":"0",
+                "BirthTime":1545471392,
+                "Bio":"",
+                "Generation":0,
+                "Pic":"/idol/xpmjv9bpp4d09.png",
+                "Cooldown":0,
+                "MatronId":0,
+                "SireId":0,
+                "HairColor":"black",
+                "EyeColor":"brown",
+                "HairStyle":"long hair",
+                "LikeCount":0
+            }
+        ]
+    }
 }
 ~~~
 
@@ -126,34 +137,45 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
 {
     "code":0,
     "message":"",
-    "data":[
-        {
-            "TokenId":1,
-            "NickName":"1",
-            "UserId":5,
-            "Genes":"0",
-            "BirthTime":1,
-            "Bio":"1",
-            "Generation":1,
-            "Pic":"/idol/000c1668c6b2.jpg",
-            "Cooldown":0,
-            "MatronId":0,
-            "SireId":0
-        },
-        {
-            "TokenId":2,
-            "NickName":"1",
-            "UserId":1,
-            "Genes":"0",
-            "BirthTime":0,
-            "Bio":"1",
-            "Generation":2,
-            "Pic":"/idol/00a1f298bbe0.jpg",
-            "Cooldown":0,
-            "MatronId":0,
-            "SireId":0
-        }
-    ]
+    "data":{
+        "count":9,
+        "rows":[
+            {
+                "TokenId":1,        //idol的编号
+                "NickName":"1",     //idol的名称
+                "UserId":5,         //address登录后，后台分配的用户Id
+                "Genes":"0",        //基因
+                "BirthTime":1,      //出生时间，unix时间戳
+                "Bio":"1",          //idol的自我介绍
+                "Generation":1,     //代
+                "Pic":"/idol/000c1668c6b2.jpg",
+                "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+                "MatronId":0,       //母idol的tokenId
+                "SireId":0          //父idol的tokenId
+                "HairColor":"black",//头发颜色
+                "EyeColor":"brown", //眼睛颜色
+                "HairStyle":"long hair", //发型
+                "LikeCount":1023 //点赞数
+            },
+            {
+                "TokenId":11,
+                "NickName":"XPM",
+                "UserId":5,
+                "Genes":"0",
+                "BirthTime":1545471392,
+                "Bio":"",
+                "Generation":0,
+                "Pic":"/idol/xpmjv9bpp4d09.png",
+                "Cooldown":0,
+                "MatronId":0,
+                "SireId":0,
+                "HairColor":"black",
+                "EyeColor":"brown",
+                "HairStyle":"long hair",
+                "LikeCount":0
+            }
+        ]
+    }
 }
 ~~~
 
@@ -177,7 +199,7 @@ Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980
     "data":{
         "TokenId":1,            //idol的编号
         "NickName":"BTC",       //idol的名称
-        "UserId":5,             //address登录后，后台分配的用户Id
+        "UserId":5,             //所有者用户Id，address登录后服务端分配的
         "Genes":"0",            //基因
         "BirthTime":1545471392, //出生时间，unix时间戳
         "Bio":"chenhao test",   //idol的自我介绍
@@ -192,7 +214,10 @@ Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980
         "HairStyle":"long hair",//发型
         "Attributes":"smile,open mouth", //特征，多个逗号隔开
         "Labels":"cute,queen",  //标签，多个逗号隔开
-        "IsLike":1              //当前用户是否点赞，0否，1是
+        "IsLike":1,             //当前用户是否点赞，0否，1是
+        "LikeCount": 1,         //点赞数量
+        "UserName": "chenhao11",//所有者昵称
+        "Address": "TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY", //所有者地址
     }
 }
 ~~~
