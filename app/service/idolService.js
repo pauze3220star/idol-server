@@ -150,12 +150,12 @@ class IdolService extends Service {
 
         //todo 待验证
         if (hasname === 1) {
-            sql += " AND NickName IS NOT NULL "
+            sql += " AND NickName IS NOT NULL AND NickName<>'' "
         }
 
         //todo 待验证
         if (hasbio === 1) {
-            sql += " AND Bio IS NOT NULL "
+            sql += " AND Bio IS NOT NULL AND Bio<>'' "
         }
 
         //todo characteristics 特征
@@ -263,7 +263,7 @@ class IdolService extends Service {
 
         sql += 'LIMIT :offset, :limit; ';
         sql += 'SELECT FOUND_ROWS() AS Counts; ';
-        let dbset = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, model: ctx.model.Counts, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
+        let dbset = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
 
         // if (idols != null)
         //     idols.forEach(idol => {
@@ -273,13 +273,32 @@ class IdolService extends Service {
 
         let idols = [];
         let count = 0;
+        let tokenIds = "";
         if (dbset != null) {
-            for (let idol in dbset[0]) {
-                idols.push(dbset[0][idol]); //属性
-                //arr.push(obj[i]); //值
+            for (let idolIndex in dbset[0]) {
+                let idol = dbset[0][idolIndex];
+                idol.IsLike = 0;
+                idols.push(idol); //属性
+                tokenIds += idol.TokenId + ",";
             }
-
             count = dbset[1][0].Counts;
+        }
+
+        //查询是否点赞
+        if (tokenIds !== "" && userId > 0) {
+            tokenIds = tokenIds.substring(0, tokenIds.lastIndexOf(","));
+            let sqlLikes = "SELECT Id,TokenId FROM userlikes WHERE UserId=:UserId AND TokenId IN(" + tokenIds + ");";
+            let likes = await ctx.model.query(sqlLikes, { raw: true, model: ctx.model.UserLikeModel, replacements: { UserId: userId } });
+            if (likes != null) {
+                likes.forEach(like => {
+                    for (var i = 0; i < idols.length; i++) {
+                        if (like.TokenId == idols[i].TokenId) {
+                            idols[i].IsLike = 1;
+                            break;
+                        }
+                    }
+                });
+            }
         }
 
         let retObj = {
