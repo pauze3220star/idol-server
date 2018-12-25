@@ -34,9 +34,10 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql;
         if (userId > 0)
-            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName FROM idols i '
+            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName '
+                + 'FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
-                + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
+                + 'LEFT OUTER JOIN users ON i.UserId = users.UserId '
                 + 'WHERE i.TokenId=:TokenId';
         else
             sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName '
