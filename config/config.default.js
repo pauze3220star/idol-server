@@ -30,6 +30,10 @@ module.exports = appInfo => {
     dir: appInfo.root + '/logs/' + appInfo.name,
   };
 
+  exports.view = {
+    defaultViewEngine: 'nunjucks',
+  };
+
   // 请修改数据库配置
   config.sequelize = {
     dialect: 'mysql',

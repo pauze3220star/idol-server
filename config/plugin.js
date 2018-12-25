@@ -14,3 +14,8 @@ exports.security = {
       enable: false,
     },
   };
+
+  // exports.nunjucks = {
+  //   enable: true,
+  //   package: 'egg-view-nunjucks',
+  // };

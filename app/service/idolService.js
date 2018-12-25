@@ -1,3 +1,4 @@
+'use strict';
 const idolAttributes = require("../../config/idolAttributes");
 const Service = require('egg').Service;
 
@@ -33,11 +34,14 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql;
         if (userId > 0)
-            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle FROM idols i '
+            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.UserName FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
+                + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
                 + 'WHERE i.TokenId=:TokenId';
         else
-            sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle FROM idols '
+            sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.UserName '
+                + 'FROM idols '
+                + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
                 + 'WHERE TokenId=:TokenId';
 
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { TokenId: tokenId, UserId: userId } });
@@ -65,7 +69,7 @@ class IdolService extends Service {
         //&filters=iteration:1~2,cooldown:ur|ssr|sr|r|n,price:1~2,liked:0x834721d79edcf0851505bf47c605607030b086c1
 
         const ctx = this.ctx;
-        let sql = 'SELECT TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle '
+        let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount '
             + 'FROM idols '
             + 'WHERE (0=:UserId OR UserId=:UserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
@@ -256,8 +260,9 @@ class IdolService extends Service {
                 break;
         }
 
-        + 'LIMIT :offset, :limit ';
-        let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
+        sql += 'LIMIT :offset, :limit; ';
+        sql += 'SELECT FOUND_ROWS() AS Counts; ';
+        let dbset = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, model: ctx.model.Counts, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
 
         // if (idols != null)
         //     idols.forEach(idol => {
@@ -265,7 +270,23 @@ class IdolService extends Service {
         //         idol.Labels = "cute,queen";
         //     });
 
-        return idols;
+        let idols = [];
+        let count = 0;
+        if (dbset != null) {
+            for (let idol in dbset[0]) {
+                idols.push(dbset[0][idol]); //属性
+                //arr.push(obj[i]); //值
+            }
+
+            count = dbset[1][0].Counts;
+        }
+
+        let retObj = {
+            count: count,
+            rows: idols
+        };
+
+        return retObj;
     }
 
     async like(userId, tokenId) {

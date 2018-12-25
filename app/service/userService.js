@@ -1,3 +1,4 @@
+'use strict';
 const message = require('../../config/message');
 const Service = require('egg').Service;
 
@@ -5,6 +6,7 @@ class UserService extends Service {
     async login(address) {
 
         const ctx = this.ctx;
+        await this.register(address, "");
         let sql = "SELECT UserId, UserName, Address FROM `users` WHERE `address`=:address";
         try {
             let users = await ctx.model.query(sql, { raw: true, model: ctx.model.UserModel, replacements: { address: address } });

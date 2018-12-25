@@ -20,6 +20,9 @@ module.exports = app => {
         IsForSale: INTEGER,
         IsRental: INTEGER,
     },
+    {
+        Counts:INTEGER,
+    },
         {
             timestamps: false,
             freezeTableName: true,
