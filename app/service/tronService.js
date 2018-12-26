@@ -34,6 +34,29 @@ module.exports = {
 
     //服务端验证签名
     async verifyMessage(message, sign, address) {
+
+        // tronWeb.getEventResult('TKexVE6nKujFaLZeAQh8YRVXda3gjpX1sV', 'Notify', 32162, (err, events) => {
+        //     if(err)
+        //         return console.error(err);
+    
+        //     console.group('Event result');
+        //         console.log('Contract Address: TKexVE6nKujFaLZeAQh8YRVXda3gjpX1sV');
+        //         console.log('Event Name: Notify');
+        //         console.log('Block Number: 32162');
+        //         console.log('- Events:\n' + JSON.stringify(events, null, 2), '\n');
+        //     console.groupEnd();
+        // });
+    
+        await tronWeb.getEventByTransactionID('2fb0c22a94ac4371303d8639d5b837232f38fb23f1a4bd2e09d2e242b7301656', (err, events) => {
+            if(err)
+                return console.error(err);
+    
+            console.group('Specific event result');
+                console.log('Transaction: 2fb0c22a94ac4371303d8639d5b837232f38fb23f1a4bd2e09d2e242b7301656');
+                console.log('- Events:\n' + JSON.stringify(events, null, 2), '\n');
+            console.groupEnd();
+        });
+
         return true;
         let hexStr = this.strToHex(message);
         let ret = false;

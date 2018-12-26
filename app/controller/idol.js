@@ -89,7 +89,7 @@ class IdolController extends Controller {
     }
 
     async getMarketIdols() {
-        await this.getIdolList(0);
+        await this.getIdolList(this.ctx.user.UserId);
     }
 
     async getIdolList(userId) {

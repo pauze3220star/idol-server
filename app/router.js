@@ -19,7 +19,7 @@ module.exports = app => {
 
   router.get('/idol/getIdol', Passport.verify, controller.idol.getIdol);
   router.get('/idol/getMyIdols', Passport.authorize, controller.idol.getMyIdols);
-  router.get('/idol/getMarketIdols', controller.idol.getMarketIdols);
+  router.get('/idol/getMarketIdols', Passport.verify, controller.idol.getMarketIdols);
 
   router.post('/idol/like', Passport.verify, controller.idol.like);
   router.post('/idol/unlike', Passport.verify, controller.idol.unlike);

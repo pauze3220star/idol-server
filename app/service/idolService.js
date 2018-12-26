@@ -148,12 +148,10 @@ class IdolService extends Service {
         //todo cooldownready 数据库需要记录上次生育时间
         //cooldownEndBlock secondsPerBlock
 
-        //todo 待验证
         if (hasname === 1) {
             sql += " AND NickName IS NOT NULL AND NickName<>'' "
         }
 
-        //todo 待验证
         if (hasbio === 1) {
             sql += " AND Bio IS NOT NULL AND Bio<>'' "
         }

@@ -12,6 +12,12 @@ module.exports = appInfo => {
     expires: 60 * 60 * 24, // 超时时间24小时
   };
 
+  config.cors = {
+    origin: 'http://localhost:8081',
+    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
+    credentials: true
+  }
+
   // add your config here
   config.middleware = [];
 
@@ -30,9 +36,9 @@ module.exports = appInfo => {
     dir: appInfo.root + '/logs/' + appInfo.name,
   };
 
-  exports.view = {
-    defaultViewEngine: 'nunjucks',
-  };
+  // exports.view = {
+  //   defaultViewEngine: 'nunjucks',
+  // };
 
   // 请修改数据库配置
   config.sequelize = {
