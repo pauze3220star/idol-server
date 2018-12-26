@@ -56,7 +56,7 @@ class IdolService extends Service {
         return null;
     };
 
-    async getIdolList(userId, category, hairColors, eyeColors, hairStyles, attributes, filters, sort, offset, limit) {
+    async getIdolList(ownerUserId, userId, category, hairColors, eyeColors, hairStyles, attributes, filters, sort, offset, limit) {
         let isForSale = 0;
         let isRental = 0;
 
@@ -72,7 +72,7 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount '
             + 'FROM idols '
-            + 'WHERE (0=:UserId OR UserId=:UserId) '
+            + 'WHERE (0=:OwnerUserId OR UserId=:OwnerUserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
             + 'AND (0=:isRental OR IsRental=:isRental) ';
 
@@ -261,7 +261,12 @@ class IdolService extends Service {
 
         sql += 'LIMIT :offset, :limit; ';
         sql += 'SELECT FOUND_ROWS() AS Counts; ';
-        let dbset = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { UserId: userId, isForSale, isRental, offset, limit } });
+        let dbset = await ctx.model.query(sql, {
+            raw: true, model: ctx.model.IdolModel, replacements:
+            {
+                OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
+            }
+        });
 
         // if (idols != null)
         //     idols.forEach(idol => {

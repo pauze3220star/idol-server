@@ -85,14 +85,14 @@ class IdolController extends Controller {
     };
 
     async getMyIdols() {
-        await this.getIdolList(this.ctx.user.UserId);
+        await this.getIdolList(this.ctx.user.UserId, this.ctx.user.UserId);
     }
 
     async getMarketIdols() {
-        await this.getIdolList(this.ctx.user.UserId);
+        await this.getIdolList(0, this.ctx.user.UserId);
     }
 
-    async getIdolList(userId) {
+    async getIdolList(ownerUserId, userId) {
         const ctx = this.ctx;
         const { category, hairColors, eyeColors, hairStyles, attributes, filters, sort } = ctx.query;
 
@@ -102,7 +102,7 @@ class IdolController extends Controller {
         const limit = pageSize < 1 ? 10 : pageSize;
         const offset = (page < 1 ? 0 : page - 1) * limit;
 
-        let idols = await ctx.service.idolService.getIdolList(userId, category, hairColors, eyeColors, hairStyles, attributes, filters, sort, offset, limit);
+        let idols = await ctx.service.idolService.getIdolList(ownerUserId, userId, category, hairColors, eyeColors, hairStyles, attributes, filters, sort, offset, limit);
 
         ctx.body = { code: 0, message: '', data: idols };
         ctx.stats = 200;
