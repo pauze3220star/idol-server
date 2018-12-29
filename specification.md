@@ -101,7 +101,14 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "HairColor":"black",//头发颜色
                 "EyeColor":"brown", //眼睛颜色
                 "HairStyle":"long hair", //发型
-                "LikeCount":1023 //点赞数
+                "LikeCount":1023,   //点赞数
+                "IsForSale": 1,     //是否正在售卖
+                "StartedAt": 0,     //售卖开始时间戳
+                "StartingPrice": 0, //开始价格
+                "EndingPrice": 0,   //结束价格
+                "Duration": 0,      //持续时间
+                "IsRental": 0,      //是否租赁
+                "IsLike": 0         //是否点赞
             },
             {
                 "TokenId":11,
@@ -118,7 +125,14 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "HairColor":"black",
                 "EyeColor":"brown",
                 "HairStyle":"long hair",
-                "LikeCount":0
+                "LikeCount":0,
+                "IsForSale": 1,
+                "StartedAt": 0,
+                "StartingPrice": 0,
+                "EndingPrice": 0,
+                "Duration": 0,
+                "IsRental": 0,
+                "IsLike": 0
             }
         ]
     }
@@ -155,7 +169,14 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "HairColor":"black",//头发颜色
                 "EyeColor":"brown", //眼睛颜色
                 "HairStyle":"long hair", //发型
-                "LikeCount":1023 //点赞数
+                "LikeCount":1023,   //点赞数
+                "IsForSale": 1,     //是否正在售卖
+                "StartedAt": 0,     //售卖开始时间戳
+                "StartingPrice": 0, //开始价格
+                "EndingPrice": 0,   //结束价格
+                "Duration": 0,      //持续时间
+                "IsRental": 0,      //是否租赁
+                "IsLike": 0         //是否点赞
             },
             {
                 "TokenId":11,
@@ -172,7 +193,14 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "HairColor":"black",
                 "EyeColor":"brown",
                 "HairStyle":"long hair",
-                "LikeCount":0
+                "LikeCount":0,
+                "IsForSale": 1,
+                "StartedAt": 0,
+                "StartingPrice": 0,
+                "EndingPrice": 0,
+                "Duration": 0,
+                "IsRental": 0,
+                "IsLike": 0
             }
         ]
     }
@@ -218,6 +246,12 @@ Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980
         "LikeCount": 1,         //点赞数量
         "UserName": "chenhao11",//所有者昵称
         "Address": "TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY", //所有者地址
+        "IsForSale": 1,     //是否正在售卖
+        "StartedAt": 0,     //售卖开始时间戳
+        "StartingPrice": 0, //开始价格
+        "EndingPrice": 0,   //结束价格
+        "Duration": 0,      //持续时间
+        "IsRental": 0,      //是否租赁
     }
 }
 ~~~

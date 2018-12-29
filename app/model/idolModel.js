@@ -19,6 +19,10 @@ module.exports = app => {
         LikeCount: INTEGER,
         IsForSale: INTEGER,
         IsRental: INTEGER,
+        StartedAt: INTEGER,
+        StartingPrice: INTEGER,
+        EndingPrice: INTEGER,
+        Duration: INTEGER,
     },
         {
             timestamps: false,

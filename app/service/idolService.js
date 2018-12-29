@@ -3,6 +3,81 @@ const idolAttributes = require("../../config/idolAttributes");
 const Service = require('egg').Service;
 
 class IdolService extends Service {
+    //ERC721中事件
+    //资产转移
+    //修改owner
+    async Transfer(events) {
+
+        console.log("IdolService.Transfer ");
+        events.forEach(event => {
+            //更新数据库
+            //from to tokenId
+        });
+    }
+
+    //授权，暂不处理
+    async Approval(events) {
+
+    }
+
+    //怀孕
+    //处理父母的状态，修改为怀孕中，需增加字段
+    async Pregnant(events) {
+
+    }
+
+    //出生
+    //处理父母的状态，修改怀孕中的状态
+    //新出生的idol放到Transfer事件里处理
+    async Birth(events) {
+
+    }
+
+
+    //SaleAuction中事件
+    //拍卖创建
+    //修改idol.IsForSale=1，记录拍卖的时间和价格
+    async SaleAuctionCreated(events) {
+
+    }
+
+    //拍卖成功
+    //修改idol.IsForSale=0
+    //删除记录拍卖的时间和价格
+    //或者这里不处理，都放到Transfer事件中处理
+    //owner的修改放到Transfer事件中处理
+    async SaleAuctionSuccessful(events) {
+
+    }
+
+    //拍卖取消
+    //修改idol.IsForSale=0
+    //删除记录拍卖的时间和价格
+    async SaleAuctionCancelled(events) {
+
+    }
+
+
+    //SiringAuction中事件
+    //拍卖创建
+    //修改idol.IsRental=1，记录拍卖的时间和价格
+    async SiringAuctionCreated(events) {
+
+    }
+
+    //拍卖成功
+    //idol.IsRental=0
+    //删除记录拍卖的时间和价格
+    async SiringAuctionSuccessful(events) {
+
+    }
+
+    //拍卖取消
+    //修改idol.IsForSale=0
+    //删除记录拍卖的时间和价格
+    async SiringAuctionCancelled(evvents) {
+
+    }
 
     async setName(tokenId, name, userId) {
         let idol = await this.ctx.model.IdolModel.findOne({ where: { TokenId: tokenId, UserId: userId } });
@@ -34,13 +109,15 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql;
         if (userId > 0)
-            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName '
+            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
+                + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
                 + 'FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
                 + 'LEFT OUTER JOIN users ON i.UserId = users.UserId '
                 + 'WHERE i.TokenId=:TokenId';
         else
-            sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName '
+            sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
+                + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
                 + 'FROM idols '
                 + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
                 + 'WHERE TokenId=:TokenId';
@@ -70,7 +147,8 @@ class IdolService extends Service {
         //&filters=iteration:1~2,cooldown:ur|ssr|sr|r|n,price:1~2,liked:0x834721d79edcf0851505bf47c605607030b086c1
 
         const ctx = this.ctx;
-        let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount '
+        let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount, '
+            + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
             + 'FROM idols '
             + 'WHERE (0=:OwnerUserId OR UserId=:OwnerUserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
