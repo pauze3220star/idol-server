@@ -6,6 +6,14 @@ module.exports = appInfo => {
   // use for cookie sign key, should change to your own and keep security
   config.keys = 'tron_Idol_1544608605980_4384';
 
+  //合约地址
+  config.contracts = {
+    idolCore: "TSU62dQsgRML8J7sYim18QJD6L56UA7KmT",
+    saleAuction: "TQmnHnW7yqfPrVEDLzf4RdA7W6wKiJjsXE",
+    siringAuction: "TKNpyPVZFzYVaERHG8RzakZNfG6yfXenG9",
+    geneScience: "TDJWBp4H15zNAuLCfJjJx5NKdwhhMZABHh"
+  }
+
   // 请修改jwt密钥和失效时间
   config.login = {
     secretKey: 'xO18B58fgfsv1UafNOoYuyKt9cjmD9Oa', // jwt密钥

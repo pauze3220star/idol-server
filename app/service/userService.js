@@ -4,7 +4,6 @@ const Service = require('egg').Service;
 
 class UserService extends Service {
     async login(address) {
-
         const ctx = this.ctx;
         await this.register(address, "");
         let sql = "SELECT UserId, UserName, Address FROM `users` WHERE `address`=:address";
@@ -31,6 +30,25 @@ class UserService extends Service {
         }
     };
 
+    async getUserId(address) {
+        const ctx = this.ctx;
+        await this.register(address, "");
+        let sql = "SELECT UserId, UserName, Address FROM `users` WHERE `address`=:address";
+        try {
+            let users = await ctx.model.query(sql, { raw: true, model: ctx.model.UserModel, replacements: { address: address } });
+            if (users != undefined && users[0].UserId > 0) {
+                return users[0].UserId;
+            }
+            else {
+                return -1;
+            }
+        }
+        catch (err) {
+            this.logger.error(err);
+            return -2;
+        }
+    }
+
     async register(address, userName) {
         const ctx = this.ctx;
         let sql = 'INSERT INTO `users` (`Address`,`UserName`,`LastLoginDate`,`LastLoginIP`,`BlockChain`,`CreateDate`) '
@@ -41,7 +59,7 @@ class UserService extends Service {
                 raw: true, replacements: {
                     address: address,
                     userName: userName,
-                    lastLoginIP: ctx.ip,
+                    lastLoginIP: ctx.ip ? ctx.ip : "",
                     blockChain: 'tron'
                 }
             });

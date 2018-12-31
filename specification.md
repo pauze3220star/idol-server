@@ -97,7 +97,7 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "Pic":"/idol/000c1668c6b2.jpg",
                 "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
                 "MatronId":0,       //母idol的tokenId
-                "SireId":0          //父idol的tokenId
+                "SireId":0,         //父idol的tokenId
                 "HairColor":"black",//头发颜色
                 "EyeColor":"brown", //眼睛颜色
                 "HairStyle":"long hair", //发型
@@ -165,7 +165,7 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "Pic":"/idol/000c1668c6b2.jpg",
                 "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
                 "MatronId":0,       //母idol的tokenId
-                "SireId":0          //父idol的tokenId
+                "SireId":0,         //父idol的tokenId
                 "HairColor":"black",//头发颜色
                 "EyeColor":"brown", //眼睛颜色
                 "HairStyle":"long hair", //发型

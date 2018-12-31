@@ -13,7 +13,8 @@ module.exports = app => {
   router.post('/user/register', controller.user.register);
   router.post('/user/getUserInfo', controller.user.getUserInfo);
   router.post('/user/signtest', controller.user.signtest);
-
+  router.post('/user/trontest', controller.user.trontest);
+  
   router.post('/idol/setName', Passport.verify, controller.idol.setName);
   router.post('/idol/setBio', Passport.verify, controller.idol.setBio);
 

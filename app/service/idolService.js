@@ -1,4 +1,5 @@
 'use strict';
+const TronWeb = require('tronweb');
 const idolAttributes = require("../../config/idolAttributes");
 const Service = require('egg').Service;
 
@@ -7,12 +8,76 @@ class IdolService extends Service {
     //资产转移
     //修改owner
     async Transfer(events) {
+        for (var i = events.length; i > 0; i--) {
+            let event = events[i - 1]; //第0个是最新的
 
-        console.log("IdolService.Transfer ");
-        events.forEach(event => {
+            console.log("IdolService.Transfer, 开始处理 tokenId:" + event.result.tokenId);
             //更新数据库
-            //from to tokenId
-        });
+            let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex(event.result.to.substring(2)));
+            if (userId <= 0)
+                continue;
+
+            let affectedRows = 0;
+
+            let sql = 'START TRANSACTION;'
+                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+                + 'UPDATE idols SET UserId=:UserId WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ' //如果set字段前后的值一样，ROW_COUNT()=0
+                + 'COMMIT;';
+            try {
+                let updates = await this.ctx.model.query(sql, {
+                    raw: true,
+                    model: this.ctx.model.IdolModel,
+                    replacements: {
+                        Transaction: event.transaction,
+                        Block: event.block,
+                        Contract: event.contract,
+                        EventName: event.name,
+                        Timestamp: event.timestamp,
+                        Result: JSON.stringify(event.result),
+                        UserId: userId,
+                        TokenId: parseInt(event.result.tokenId)
+                    }
+                });
+
+                if (updates != null && updates.length > 0) {
+                    updates.forEach(function (item, i) {
+                        if (item.affectedRows == undefined || item.affectedRows == 0) {
+                            return true;
+                        }
+                        affectedRows = affectedRows + item.affectedRows;
+                    });
+                }
+            }
+            catch (err) {
+                console.log(err);
+            }
+
+            //affectedRows = 0，已经处理过的事件
+            //affectedRows = 2，本次transfer成功
+            //affectedRows = 1，日志插入成功，但update失败，说明是新的idol产生
+            if (affectedRows == 0) {
+                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Processed");
+            }
+            else if (affectedRows == 2) {
+                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", UPDATE Success");
+            }
+            else if (affectedRows == 1) {
+                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", INSERT Success");
+                try {
+                    let sql = 'INSERT INTO idols(TokenId, UserId, Pic) VALUES(:TokenId, :UserId, "");'; //TODO：待删除，新出生的放到Birth事件中处理
+                    await this.ctx.model.query(sql, {
+                        raw: true,
+                        replacements: {
+                            TokenId: parseInt(event.result.tokenId),
+                            UserId: userId
+                        }
+                    });
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            }
+        }
     }
 
     //授权，暂不处理
@@ -21,24 +86,119 @@ class IdolService extends Service {
     }
 
     //怀孕
-    //处理父母的状态，修改为怀孕中，需增加字段
+    //处理父母的状态，修改母猫为怀孕中IsPregnant=1，修改父母猫的cooldown+1
+    //event Pregnant(address owner, uint256 matronId, uint256 sireId, uint256 cooldownEndBlock);
     async Pregnant(events) {
+        for (var i = events.length; i > 0; i--) {
+            let event = events[i - 1]; //第0个是最新的
 
+            console.log("IdolService.Pregnant, 开始处理 :");
+
+            let sql = 'START TRANSACTION;'
+                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+                + "UPDATE idols SET IsPregnant=1, SiringWithId=:sireId, CooldownEndBlock=:cooldownEndBlock WHERE TokenId=:matronId AND ROW_COUNT() > 0; "
+                + "UPDATE idols SET Cooldown=Cooldown+1 WHERE (TokenId=:matronId OR TokenId=:sireId) AND Cooldown<13 AND ROW_COUNT() > 0 ;" //TODO Cooldown 字段名改为CooldownIndex
+                + 'COMMIT;';
+            try {
+                await this.ctx.model.query(sql, {
+                    raw: true,
+                    model: this.ctx.model.IdolModel,
+                    replacements: {
+                        Transaction: event.transaction,
+                        Block: event.block,
+                        Contract: event.contract,
+                        EventName: event.name,
+                        Timestamp: event.timestamp,
+                        Result: JSON.stringify(event.result),
+                        matronId: parseInt(event.result.matronId),
+                        sireId: parseInt(event.result.sireId),
+                        cooldownEndBlock: parseInt(event.result.cooldownEndBlock)
+                    }
+                });
+            }
+            catch (err) { }
+        }
     }
 
     //出生
-    //处理父母的状态，修改怀孕中的状态
-    //新出生的idol放到Transfer事件里处理
+    //处理母怀孕中的状态IsPregnant=0
+    //插入新出生的idol
+    //event Birth(address owner, uint256 kittyId, uint256 matronId, uint256 sireId, uint256 genes);
     async Birth(events) {
+        for (var i = events.length; i > 0; i--) {
+            let event = events[i - 1]; //第0个是最新的
 
+            console.log("IdolService.Pregnant, 开始处理 :");
+
+            let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex(event.result.to.substring(2)));
+            if (userId <= 0)
+                continue;
+
+            let sql = 'START TRANSACTION;'
+                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+                + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic) VALUES(:kittyId, :userId, :matronId, :sireId, "") AND ROW_COUNT() > 0;' //新猫出生
+                + "UPDATE idols SET IsPregnant=0, SiringWithId=0 CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; " //母猫生育，释放出来
+                + 'COMMIT;';
+            try {
+                await this.ctx.model.query(sql, {
+                    raw: true,
+                    model: this.ctx.model.IdolModel,
+                    replacements: {
+                        Transaction: event.transaction,
+                        Block: event.block,
+                        Contract: event.contract,
+                        EventName: event.name,
+                        Timestamp: event.timestamp,
+                        Result: JSON.stringify(event.result),
+                        kittyId: parseInt(event.result.kittyId),
+                        userId: userId,
+                        matronId: parseInt(event.result.matronId),
+                        sireId: parseInt(event.result.sireId)
+                    }
+                });
+            }
+            catch (err) { }
+        }
     }
 
 
     //SaleAuction中事件
     //拍卖创建
     //修改idol.IsForSale=1，记录拍卖的时间和价格
-    async SaleAuctionCreated(events) {
+    async AuctionCreated(events, IsSaleorRental) {
+        for (var i = events.length; i > 0; i--) {
+            let event = events[i - 1]; //第0个是最新的
 
+            console.log("IdolService.AuctionCreated, 开始处理 tokenId:" + event.result.tokenId);
+
+            let sql = 'START TRANSACTION;'
+                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+            if (isSaleorRental == 1) //发起拍卖
+                sql += 'UPDATE idols SET IsForSale=1, StartingPrice=:StartingPrice, EndingPrice=:EndingPrice, StartedAt=:StartedAt, Duration=:Duration WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //如果set字段前后的值一样，ROW_COUNT()=0
+            else
+                sql += 'UPDATE idols SET IsRental=1, StartingPrice=:StartingPrice, EndingPrice=:EndingPrice, StartedAt=:StartedAt, Duration=:Duration WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ';
+            sql += 'COMMIT;';
+            try {
+                await this.ctx.model.query(sql, {
+                    raw: true,
+                    model: this.ctx.model.IdolModel,
+                    replacements: {
+                        Transaction: event.transaction,
+                        Block: event.block,
+                        Contract: event.contract,
+                        EventName: event.name,
+                        Timestamp: event.timestamp,
+                        Result: JSON.stringify(event.result),
+                        TokenId: parseInt(event.result.tokenId),
+                        StartingPrice: parseInt(event.result.startingPrice),
+                        EndingPrice: parseInt(event.result.endingPrice),
+                        StartedAt: event.timestamp,
+                        Duration: parseInt(event.result.duration)
+                    }
+                });
+            }
+            catch (err) { }
+        }
     }
 
     //拍卖成功
@@ -46,37 +206,73 @@ class IdolService extends Service {
     //删除记录拍卖的时间和价格
     //或者这里不处理，都放到Transfer事件中处理
     //owner的修改放到Transfer事件中处理
-    async SaleAuctionSuccessful(events) {
+    async AuctionSuccessful(events, IsSaleorRental) {
+        for (var i = events.length; i > 0; i--) {
+            let event = events[i - 1]; //第0个是最新的
 
+            console.log("IdolService.AuctionSuccessful, 开始处理 tokenId:" + event.result.tokenId);
+
+            let sql = 'START TRANSACTION;'
+                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+            if (isSaleorRental == 1) //发起拍卖
+                sql += 'UPDATE idols SET IsForSale=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //购买成功，IsForSale=0，修改owner address放到Transfer事件处理
+            else
+                sql += 'UPDATE idols SET IsRental=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ';
+            sql += 'COMMIT;';
+
+            try {
+                await this.ctx.model.query(sql, {
+                    raw: true,
+                    model: this.ctx.model.IdolModel,
+                    replacements: {
+                        Transaction: event.transaction,
+                        Block: event.block,
+                        Contract: event.contract,
+                        EventName: event.name,
+                        Timestamp: event.timestamp,
+                        Result: JSON.stringify(event.result),
+                        TokenId: parseInt(event.result.tokenId)
+                    }
+                });
+            }
+            catch (err) { }
+        }
     }
 
     //拍卖取消
     //修改idol.IsForSale=0
     //删除记录拍卖的时间和价格
-    async SaleAuctionCancelled(events) {
+    async AuctionCancelled(events, isSaleorRental) {
+        for (var i = events.length; i > 0; i--) {
+            let event = events[i - 1]; //第0个是最新的
 
-    }
+            console.log("IdolService.AuctionCancelled, 开始处理 tokenId:" + event.result.tokenId);
 
+            let sql = 'START TRANSACTION;'
+                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());';
+            if (isSaleorRental == 1) //发起拍卖
+                sql += 'UPDATE idols SET IsForSale=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //购买成功，IsForSale=0，修改owner address放到Transfer事件处理
+            else //发起租赁
+                sql += 'UPDATE idols SET IsRental=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ';
+            sql += 'COMMIT;';
 
-    //SiringAuction中事件
-    //拍卖创建
-    //修改idol.IsRental=1，记录拍卖的时间和价格
-    async SiringAuctionCreated(events) {
-
-    }
-
-    //拍卖成功
-    //idol.IsRental=0
-    //删除记录拍卖的时间和价格
-    async SiringAuctionSuccessful(events) {
-
-    }
-
-    //拍卖取消
-    //修改idol.IsForSale=0
-    //删除记录拍卖的时间和价格
-    async SiringAuctionCancelled(evvents) {
-
+            try {
+                await this.ctx.model.query(sql, {
+                    raw: true,
+                    model: this.ctx.model.IdolModel,
+                    replacements: {
+                        Transaction: event.transaction,
+                        Block: event.block,
+                        Contract: event.contract,
+                        EventName: event.name,
+                        Timestamp: event.timestamp,
+                        Result: JSON.stringify(event.result),
+                        TokenId: parseInt(event.result.tokenId)
+                    }
+                });
+            }
+            catch (err) { }
+        }
     }
 
     async setName(tokenId, name, userId) {
@@ -110,6 +306,8 @@ class IdolService extends Service {
         let sql;
         if (userId > 0)
             sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
+                //+ '(SELECT GROUP_CONCAT(Attribute) FROM idolattributes WHERE idolattributes.TokenId=i.TokenId GROUP BY TokenId) AS Attributes, ' Attributes行列转换
+                //+ '(SELECT GROUP_CONCAT(Label) FROM idollabels WHERE idollabels.TokenId=i.TokenId GROUP BY TokenId) AS Labels, ' Labels行列转换
                 + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
                 + 'FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '

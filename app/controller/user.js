@@ -2,7 +2,7 @@
 const jwt = require('jsonwebtoken');
 const message = require('../../config/message');
 const config = require('../../config/config.default')('');
-const tronService = require("../service/tronService");
+const tronService = require("../TronEvents/tronService");
 const Controller = require('egg').Controller;
 
 class UserController extends Controller {
@@ -63,6 +63,18 @@ class UserController extends Controller {
             ctx.body = msg.registerError;
     }
 
+
+    async trontest() {
+        const tokenId = this.ctx.request.body.tokenId;
+        let a = await tronService.ownerOf(1);
+        let b = await tronService.getKitty(tokenId);
+
+        let auction1 = await tronService.bid(tokenId);
+
+        let auction = await tronService.getAuction(tokenId);
+
+        this.ctx.body = auction;
+    }
 
     async signtest() {
         var timestamp = Math.round(new Date().getTime() / 1000);
