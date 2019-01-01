@@ -8,7 +8,7 @@ module.exports = {
     async listen(ctx) {
         await tronService.listenEvent(saleAuction, 'AuctionCreated', this.AuctionCreated, ctx);
         await tronService.listenEvent(saleAuction, 'AuctionSuccessful', this.AuctionSuccessful, ctx);
-        await tronService.listenEvent(saleAuction, 'AuctionCancelled', this.AuctionCancelled, ctx);
+        //await tronService.listenEvent(saleAuction, 'AuctionCancelled', this.AuctionCancelled, ctx);
     },
 
     //拍卖创建

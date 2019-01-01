@@ -12,17 +12,23 @@ class IdolService extends Service {
             let event = events[i - 1]; //第0个是最新的
 
             console.log("IdolService.Transfer, 开始处理 tokenId:" + event.result.tokenId);
+
+            let to = TronWeb.address.fromHex("41" + event.result.to.substring(2));
+            //创建拍卖，转给拍卖合约，不处理
+            if (to == "TQmnHnW7yqfPrVEDLzf4RdA7W6wKiJjsXE" || to == "TKNpyPVZFzYVaERHG8RzakZNfG6yfXenG9")
+                continue;
+
             //更新数据库
-            let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex(event.result.to.substring(2)));
+            let userId = await this.ctx.service.userService.getUserId(to);
             if (userId <= 0)
                 continue;
 
             let affectedRows = 0;
 
-            let sql = 'START TRANSACTION;'
-                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
-                + 'UPDATE idols SET UserId=:UserId WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ' //如果set字段前后的值一样，ROW_COUNT()=0
-                + 'COMMIT;';
+            let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+                + 'UPDATE idols SET UserId=:UserId WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //如果set字段前后的值一样，ROW_COUNT()=0
+
+            let trans = await this.ctx.model.transaction();
             try {
                 let updates = await this.ctx.model.query(sql, {
                     raw: true,
@@ -36,7 +42,8 @@ class IdolService extends Service {
                         Result: JSON.stringify(event.result),
                         UserId: userId,
                         TokenId: parseInt(event.result.tokenId)
-                    }
+                    },
+                    transaction: trans
                 });
 
                 if (updates != null && updates.length > 0) {
@@ -47,9 +54,11 @@ class IdolService extends Service {
                         affectedRows = affectedRows + item.affectedRows;
                     });
                 }
+                await trans.commit();
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
+                await trans.rollback();
             }
 
             //affectedRows = 0，已经处理过的事件
@@ -59,23 +68,10 @@ class IdolService extends Service {
                 console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Processed");
             }
             else if (affectedRows == 2) {
-                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", UPDATE Success");
+                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Insert translogs success, update idols success");
             }
-            else if (affectedRows == 1) {
-                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", INSERT Success");
-                try {
-                    let sql = 'INSERT INTO idols(TokenId, UserId, Pic) VALUES(:TokenId, :UserId, "");'; //TODO：待删除，新出生的放到Birth事件中处理
-                    await this.ctx.model.query(sql, {
-                        raw: true,
-                        replacements: {
-                            TokenId: parseInt(event.result.tokenId),
-                            UserId: userId
-                        }
-                    });
-                }
-                catch (err) {
-                    console.log(err);
-                }
+            else if (affectedRows == 1) { //新出生的情况，放到Birth事件里面处理
+                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Insert translogs success, update idols failure ");
             }
         }
     }
@@ -94,11 +90,11 @@ class IdolService extends Service {
 
             console.log("IdolService.Pregnant, 开始处理 :");
 
-            let sql = 'START TRANSACTION;'
-                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
-                + "UPDATE idols SET IsPregnant=1, SiringWithId=:sireId, CooldownEndBlock=:cooldownEndBlock WHERE TokenId=:matronId AND ROW_COUNT() > 0; "
-                + "UPDATE idols SET Cooldown=Cooldown+1 WHERE (TokenId=:matronId OR TokenId=:sireId) AND Cooldown<13 AND ROW_COUNT() > 0 ;" //TODO Cooldown 字段名改为CooldownIndex
-                + 'COMMIT;';
+            let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+                + "UPDATE idols SET IsPregnant=1, SiringWithId=:sireId, CooldownIndex=CooldownIndex+1, CooldownEndBlock=:cooldownEndBlock WHERE TokenId=:matronId AND ROW_COUNT() > 0; "
+                + "UPDATE idols SET CooldownIndex=CooldownIndex+1 WHERE (TokenId=:matronId OR TokenId=:sireId) AND Cooldown<13 AND ROW_COUNT() > 0 ;"; //TODO Cooldown 字段名改为CooldownIndex
+            //todo，还需查询父亲的CooldownEndBlock值
+            let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
                     raw: true,
@@ -113,10 +109,15 @@ class IdolService extends Service {
                         matronId: parseInt(event.result.matronId),
                         sireId: parseInt(event.result.sireId),
                         cooldownEndBlock: parseInt(event.result.cooldownEndBlock)
-                    }
+                    },
+                    transaction: trans
                 });
+                await trans.commit();
             }
-            catch (err) { }
+            catch (err) {
+                console.error(err);
+                await trans.rollback();
+            }
         }
     }
 
@@ -130,15 +131,15 @@ class IdolService extends Service {
 
             console.log("IdolService.Pregnant, 开始处理 :");
 
-            let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex(event.result.to.substring(2)));
+            let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex("41" + event.result.owner.substring(2)));
             if (userId <= 0)
                 continue;
 
-            let sql = 'START TRANSACTION;'
-                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
-                + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic) VALUES(:kittyId, :userId, :matronId, :sireId, "") AND ROW_COUNT() > 0;' //新猫出生
-                + "UPDATE idols SET IsPregnant=0, SiringWithId=0 CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; " //母猫生育，释放出来
-                + 'COMMIT;';
+            let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+                + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic) SELECT :kittyId, :userId, :matronId, :sireId, "" WHERE ROW_COUNT() > 0;' //新猫出生
+                + "UPDATE idols SET IsPregnant=0, SiringWithId=0, CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; "; //母猫生育，释放出来
+            //todo：还需查询新出生的BirthTime、代、cooldownIndex
+            let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
                     raw: true,
@@ -154,10 +155,15 @@ class IdolService extends Service {
                         userId: userId,
                         matronId: parseInt(event.result.matronId),
                         sireId: parseInt(event.result.sireId)
-                    }
+                    },
+                    transaction: trans
                 });
+                await trans.commit();
             }
-            catch (err) { }
+            catch (err) {
+                console.error(err);
+                await trans.rollback();
+            }
         }
     }
 
@@ -165,19 +171,19 @@ class IdolService extends Service {
     //SaleAuction中事件
     //拍卖创建
     //修改idol.IsForSale=1，记录拍卖的时间和价格
-    async AuctionCreated(events, IsSaleorRental) {
+    async AuctionCreated(events, isSaleorRental) {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
             console.log("IdolService.AuctionCreated, 开始处理 tokenId:" + event.result.tokenId);
 
-            let sql = 'START TRANSACTION;'
-                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+            let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
             if (isSaleorRental == 1) //发起拍卖
                 sql += 'UPDATE idols SET IsForSale=1, StartingPrice=:StartingPrice, EndingPrice=:EndingPrice, StartedAt=:StartedAt, Duration=:Duration WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //如果set字段前后的值一样，ROW_COUNT()=0
             else
                 sql += 'UPDATE idols SET IsRental=1, StartingPrice=:StartingPrice, EndingPrice=:EndingPrice, StartedAt=:StartedAt, Duration=:Duration WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ';
-            sql += 'COMMIT;';
+
+            let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
                     raw: true,
@@ -192,12 +198,17 @@ class IdolService extends Service {
                         TokenId: parseInt(event.result.tokenId),
                         StartingPrice: parseInt(event.result.startingPrice),
                         EndingPrice: parseInt(event.result.endingPrice),
-                        StartedAt: event.timestamp,
+                        StartedAt: event.timestamp / 1000,
                         Duration: parseInt(event.result.duration)
-                    }
+                    },
+                    transaction: trans
                 });
+                await trans.commit();
             }
-            catch (err) { }
+            catch (err) {
+                console.error(err);
+                await trans.rollback();
+            }
         }
     }
 
@@ -206,20 +217,19 @@ class IdolService extends Service {
     //删除记录拍卖的时间和价格
     //或者这里不处理，都放到Transfer事件中处理
     //owner的修改放到Transfer事件中处理
-    async AuctionSuccessful(events, IsSaleorRental) {
+    async AuctionSuccessful(events, isSaleorRental) {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
             console.log("IdolService.AuctionSuccessful, 开始处理 tokenId:" + event.result.tokenId);
 
-            let sql = 'START TRANSACTION;'
-                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
+            let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
             if (isSaleorRental == 1) //发起拍卖
                 sql += 'UPDATE idols SET IsForSale=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //购买成功，IsForSale=0，修改owner address放到Transfer事件处理
             else
                 sql += 'UPDATE idols SET IsRental=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ';
-            sql += 'COMMIT;';
 
+            let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
                     raw: true,
@@ -232,10 +242,16 @@ class IdolService extends Service {
                         Timestamp: event.timestamp,
                         Result: JSON.stringify(event.result),
                         TokenId: parseInt(event.result.tokenId)
-                    }
+                    },
+                    transaction: trans
                 });
+
+                await trans.commit();
             }
-            catch (err) { }
+            catch (err) {
+                console.error(err);
+                await trans.rollback();
+            }
         }
     }
 
@@ -248,14 +264,13 @@ class IdolService extends Service {
 
             console.log("IdolService.AuctionCancelled, 开始处理 tokenId:" + event.result.tokenId);
 
-            let sql = 'START TRANSACTION;'
-                + 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());';
+            let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());';
             if (isSaleorRental == 1) //发起拍卖
                 sql += 'UPDATE idols SET IsForSale=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; '; //购买成功，IsForSale=0，修改owner address放到Transfer事件处理
             else //发起租赁
                 sql += 'UPDATE idols SET IsRental=0, StartingPrice=0, EndingPrice=0, StartedAt=0, Duration=0 WHERE TokenId=:TokenId AND ROW_COUNT() > 0; ';
-            sql += 'COMMIT;';
 
+            let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
                     raw: true,
@@ -268,10 +283,15 @@ class IdolService extends Service {
                         Timestamp: event.timestamp,
                         Result: JSON.stringify(event.result),
                         TokenId: parseInt(event.result.tokenId)
-                    }
+                    },
+                    transaction: trans
                 });
+                await trans.commit();
             }
-            catch (err) { }
+            catch (err) {
+                console.error(err);
+                await trans.rollback();
+            }
         }
     }
 
@@ -539,9 +559,9 @@ class IdolService extends Service {
         sql += 'SELECT FOUND_ROWS() AS Counts; ';
         let dbset = await ctx.model.query(sql, {
             raw: true, model: ctx.model.IdolModel, replacements:
-            {
-                OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
-            }
+                {
+                    OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
+                }
         });
 
         // if (idols != null)
@@ -589,46 +609,64 @@ class IdolService extends Service {
     }
 
     async like(userId, tokenId) {
-        let sql = 'START TRANSACTION; '
-            + 'UPDATE idols SET LikeCount=LikeCount+1 WHERE TokenId=:TokenId AND NOT EXISTS ( SELECT 1 FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId); '
+        let sql = 'UPDATE idols SET LikeCount=LikeCount+1 WHERE TokenId=:TokenId AND NOT EXISTS ( SELECT 1 FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId); '
             + 'INSERT INTO userlikes (UserId, TokenId, CreateDate) '
-            + ' SELECT :UserId, :TokenId, UNIX_TIMESTAMP() FROM DUAL WHERE ROW_COUNT() > 0;'
-            + 'COMMIT';
-        let updates = await this.ctx.model.query(sql, {
-            raw: true,
-            model: this.ctx.model.IdolModel,
-            replacements: { UserId: userId, TokenId: tokenId }
-        });
+            + ' SELECT :UserId, :TokenId, UNIX_TIMESTAMP() FROM DUAL WHERE ROW_COUNT() > 0;';
+
         let affectedRows = 0;
-        if (updates != null && updates.length > 0) {
-            updates.forEach(function (item, i) {
-                if (item.affectedRows == undefined || item.affectedRows == 0) {
-                    return true;
-                }
-                affectedRows = affectedRows + item.affectedRows;
+        let trans = await this.ctx.model.transaction();
+        try {
+            let updates = await this.ctx.model.query(sql, {
+                raw: true,
+                model: this.ctx.model.IdolModel,
+                replacements: { UserId: userId, TokenId: tokenId },
+                transaction: trans
             });
+
+            if (updates != null && updates.length > 0) {
+                updates.forEach(function (item, i) {
+                    if (item.affectedRows == undefined || item.affectedRows == 0) {
+                        return true;
+                    }
+                    affectedRows = affectedRows + item.affectedRows;
+                });
+            }
+            await trans.commit();
+        }
+        catch (err) {
+            console.error(err);
+            await trans.rollback();
         }
         return affectedRows;
     }
 
     async unlike(userId, tokenId) {
-        let sql = 'START TRANSACTION; '
-            + 'DELETE FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId; '
-            + 'UPDATE idols SET LikeCount=LikeCount-1 WHERE TokenId=:TokenId AND ROW_COUNT() > 0;'
-            + 'COMMIT';
-        let updates = await this.ctx.model.query(sql, {
-            raw: true,
-            model: this.ctx.model.IdolModel,
-            replacements: { UserId: userId, TokenId: tokenId }
-        });
+        let sql = 'DELETE FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId; '
+            + 'UPDATE idols SET LikeCount=LikeCount-1 WHERE TokenId=:TokenId AND ROW_COUNT() > 0;';
+
         let affectedRows = 0;
-        if (updates != null && updates.length > 0) {
-            updates.forEach(function (item, i) {
-                if (item.affectedRows == undefined || item.affectedRows == 0) {
-                    return true;
-                }
-                affectedRows = affectedRows + item.affectedRows;
+        let trans = await this.ctx.model.transaction();
+        try {
+            let updates = await this.ctx.model.query(sql, {
+                raw: true,
+                model: this.ctx.model.IdolModel,
+                replacements: { UserId: userId, TokenId: tokenId },
+                transaction: trans
             });
+
+            if (updates != null && updates.length > 0) {
+                updates.forEach(function (item, i) {
+                    if (item.affectedRows == undefined || item.affectedRows == 0) {
+                        return true;
+                    }
+                    affectedRows = affectedRows + item.affectedRows;
+                });
+            }
+            await trans.commit();
+        }
+        catch (err) {
+            console.error(err);
+            await trans.rollback();
         }
         return affectedRows;
     }
