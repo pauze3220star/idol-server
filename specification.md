@@ -95,7 +95,8 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "Bio":"1",          //idol的自我介绍
                 "Generation":1,     //代
                 "Pic":"/idol/000c1668c6b2.jpg",
-                "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+                "CooldownIndex":0,  //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+                "CooldownEndBlock":0,//冷却结束块
                 "MatronId":0,       //母idol的tokenId
                 "SireId":0,         //父idol的tokenId
                 "HairColor":"black",//头发颜色
@@ -119,7 +120,8 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "Bio":"",
                 "Generation":0,
                 "Pic":"/idol/xpmjv9bpp4d09.png",
-                "Cooldown":0,
+                "CooldownIndex":0,
+                "CooldownEndBlock":0,
                 "MatronId":0,
                 "SireId":0,
                 "HairColor":"black",
@@ -163,7 +165,8 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "Bio":"1",          //idol的自我介绍
                 "Generation":1,     //代
                 "Pic":"/idol/000c1668c6b2.jpg",
-                "Cooldown":0,       //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+                "CooldownIndex":0,  //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+                "CooldownEndBlock":0,//冷却结束块
                 "MatronId":0,       //母idol的tokenId
                 "SireId":0,         //父idol的tokenId
                 "HairColor":"black",//头发颜色
@@ -187,7 +190,8 @@ let sign = await tronWeb.trx.signMessage(hexStr); //签名
                 "Bio":"",
                 "Generation":0,
                 "Pic":"/idol/xpmjv9bpp4d09.png",
-                "Cooldown":0,
+                "CooldownIndex":0,
+                "CooldownEndBlock":0,
                 "MatronId":0,
                 "SireId":0,
                 "HairColor":"black",
@@ -233,7 +237,9 @@ Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980
         "Bio":"chenhao test",   //idol的自我介绍
         "Generation":0,         //代
         "Pic":"/idol/BTCfgd31ucjx9.png",
-        "Cooldown":0,           //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+        "CooldownIndex":0,      //idol的冷却时间对应的index索引，ur|ssr|sr|r|n，|4|3|2|1|0
+        "CooldownEndBlock":0,   //冷却结束块
+        "IsReady":1,            //是否冷却就绪
         "MatronId":0,           //母idol的tokenId
         "SireId":0,             //父idol的tokenId
         "LikeId":19,
@@ -246,12 +252,13 @@ Cookie:csrfToken=IHoPCGBkcxULU7tpQOXl2Zyr; locale=en-us; tron_Idol_1544608605980
         "LikeCount": 1,         //点赞数量
         "UserName": "chenhao11",//所有者昵称
         "Address": "TPL66VK2gCXNCD7EJg9pgJRfqcRazjhUZY", //所有者地址
-        "IsForSale": 1,     //是否正在售卖
-        "StartedAt": 0,     //售卖开始时间戳
-        "StartingPrice": 0, //开始价格
-        "EndingPrice": 0,   //结束价格
-        "Duration": 0,      //持续时间
-        "IsRental": 0,      //是否租赁
+        "IsForSale": 1,         //是否正在售卖
+        "StartedAt": 0,         //售卖开始时间戳
+        "StartingPrice": 0,     //开始价格
+        "EndingPrice": 0,       //结束价格
+        "Duration": 0,          //持续时间
+        "IsRental": 0,          //是否租赁
+        "IsPregnant": 0         //是否怀孕
     }
 }
 ~~~

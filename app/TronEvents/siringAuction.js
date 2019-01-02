@@ -1,11 +1,9 @@
-const config = require('../../config/config.default')('');
-const tronService = require("../TronEvents/tronService");
-
-let siringAuction = config.contracts.siringAuction;
+const tronService = require("./tronService");
 
 module.exports = {
 
     async listen(ctx) {
+        let siringAuction = ctx.app.config.contracts.siringAuction;
         await tronService.listenEvent(siringAuction, 'AuctionCreated', this.AuctionCreated, ctx);
         await tronService.listenEvent(siringAuction, 'AuctionSuccessful', this.AuctionSuccessful, ctx);
         await tronService.listenEvent(siringAuction, 'AuctionCancelled', this.AuctionCancelled, ctx);

@@ -1,11 +1,9 @@
-const config = require('../../config/config.default')('');
-const tronService = require("../TronEvents/tronService");
-
-let idolCore = config.contracts.idolCore;
+const tronService = require("./tronService");
 
 module.exports = {
 
     async listen(ctx) {
+        let idolCore = ctx.app.config.contracts.idolCore;
         await tronService.listenEvent(idolCore, 'Transfer', this.Transfer, ctx);
         await tronService.listenEvent(idolCore, 'Pregnant', this.Pregnant, ctx);
         await tronService.listenEvent(idolCore, 'Birth', this.Birth, ctx);
@@ -13,7 +11,7 @@ module.exports = {
 
     //转账
     async Transfer(events, ctx) {
-        //console.log("监听到Ttransfer事件：", events);
+        console.log("监听到Ttransfer事件：", events);
         await ctx.service.idolService.Transfer(events);
     },
 

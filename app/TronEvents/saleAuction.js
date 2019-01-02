@@ -1,14 +1,12 @@
-const config = require('../../config/config.default')('');
-const tronService = require("../TronEvents/tronService");
-
-let saleAuction = config.contracts.saleAuction;
+const tronService = require("./tronService");
 
 module.exports = {
 
     async listen(ctx) {
+        let saleAuction = ctx.app.config.contracts.saleAuction;
         await tronService.listenEvent(saleAuction, 'AuctionCreated', this.AuctionCreated, ctx);
         await tronService.listenEvent(saleAuction, 'AuctionSuccessful', this.AuctionSuccessful, ctx);
-        //await tronService.listenEvent(saleAuction, 'AuctionCancelled', this.AuctionCancelled, ctx);
+        await tronService.listenEvent(saleAuction, 'AuctionCancelled', this.AuctionCancelled, ctx);
     },
 
     //拍卖创建

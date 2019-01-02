@@ -1,5 +1,6 @@
 'use strict';
 const Passport = require('./service/passport');
+const tronService = require("./TronEvents/tronService");
 
 /**
  * @param {Egg.Application} app - egg application
@@ -24,5 +25,7 @@ module.exports = app => {
 
   router.post('/idol/like', Passport.verify, controller.idol.like);
   router.post('/idol/unlike', Passport.verify, controller.idol.unlike);
+
+  tronService.listenIdolUpdate();
 
 };

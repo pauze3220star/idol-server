@@ -12,7 +12,9 @@ module.exports = appInfo => {
     saleAuction: "TQmnHnW7yqfPrVEDLzf4RdA7W6wKiJjsXE",
     siringAuction: "TKNpyPVZFzYVaERHG8RzakZNfG6yfXenG9",
     geneScience: "TDJWBp4H15zNAuLCfJjJx5NKdwhhMZABHh"
-  }
+  };
+
+  config.currentBlockNumber = 0;
 
   // 请修改jwt密钥和失效时间
   config.login = {
@@ -24,7 +26,7 @@ module.exports = appInfo => {
     origin: 'http://localhost:8081',
     allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
     credentials: true
-  }
+  };
 
   // add your config here
   config.middleware = [];

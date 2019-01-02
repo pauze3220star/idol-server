@@ -1,4 +1,3 @@
-//const config = require('../../config/config.default')('');
 let tronEvents = require("../TronEvents");
 module.exports = {
     schedule: {

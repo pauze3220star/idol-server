@@ -1,7 +1,6 @@
 'use strict';
 const jwt = require('jsonwebtoken');
 const message = require('../../config/message');
-const config = require('../../config/config.default')('');
 const tronService = require("../TronEvents/tronService");
 const Controller = require('egg').Controller;
 
@@ -25,14 +24,14 @@ class UserController extends Controller {
 
         let content = { UserId: userId, Address: address };
         // 过期时间
-        const expires = config.login.expires;
+        const expires = this.config.login.expires;
         // 生成token
-        let token = jwt.sign(content, config.login.secretKey, {
+        let token = jwt.sign(content, this.config.login.secretKey, {
             expiresIn: expires,
         });
 
         //下发cookies
-        await ctx.cookies.set(config.keys, token);
+        await ctx.cookies.set(this.config.keys, token);
 
         // 返回
         let retObj = msg.success;

@@ -2,6 +2,7 @@
 const TronWeb = require('tronweb');
 const idolAttributes = require("../../config/idolAttributes");
 const Service = require('egg').Service;
+const EventBus = require('./eventBus');
 
 class IdolService extends Service {
     //ERC721中事件
@@ -82,7 +83,7 @@ class IdolService extends Service {
     }
 
     //怀孕
-    //处理父母的状态，修改母猫为怀孕中IsPregnant=1，修改父母猫的cooldown+1
+    //处理父母的状态，修改母猫为怀孕中IsPregnant=1，修改父母猫的cooldownIndex+1
     //event Pregnant(address owner, uint256 matronId, uint256 sireId, uint256 cooldownEndBlock);
     async Pregnant(events) {
         for (var i = events.length; i > 0; i--) {
@@ -92,8 +93,11 @@ class IdolService extends Service {
 
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
                 + "UPDATE idols SET IsPregnant=1, SiringWithId=:sireId, CooldownIndex=CooldownIndex+1, CooldownEndBlock=:cooldownEndBlock WHERE TokenId=:matronId AND ROW_COUNT() > 0; "
-                + "UPDATE idols SET CooldownIndex=CooldownIndex+1 WHERE (TokenId=:matronId OR TokenId=:sireId) AND Cooldown<13 AND ROW_COUNT() > 0 ;"; //TODO Cooldown 字段名改为CooldownIndex
-            //todo，还需查询父亲的CooldownEndBlock值
+                + "UPDATE idols SET CooldownIndex=CooldownIndex+1 WHERE (TokenId=:matronId OR TokenId=:sireId) AND CooldownIndex<13 AND ROW_COUNT() > 0 ;";
+
+            //更新父亲的CooldownEndBlock
+            EventBus.eventEmitter.emit("idol_update", parseInt(event.result.sireId), this.ctx);
+
             let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
@@ -138,7 +142,10 @@ class IdolService extends Service {
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
                 + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic) SELECT :kittyId, :userId, :matronId, :sireId, "" WHERE ROW_COUNT() > 0;' //新猫出生
                 + "UPDATE idols SET IsPregnant=0, SiringWithId=0, CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; "; //母猫生育，释放出来
-            //todo：还需查询新出生的BirthTime、代、cooldownIndex
+
+            //更新新出生idol的BirthTime、代、cooldownIndex
+            EventBus.eventEmitter.emit("idol_update", parseInt(event.result.sireId), this.ctx);
+
             let trans = await this.ctx.model.transaction();
             try {
                 await this.ctx.model.query(sql, {
@@ -295,6 +302,29 @@ class IdolService extends Service {
         }
     }
 
+    async update(tokenId, idol) {
+        console.log("updating tokenId = " + tokenId);
+
+        let sql = "UPDATE idols SET BirthTime=:birthTime, Generation=:generation, CooldownIndex=:cooldownIndex, CooldownEndBlock=:cooldownEndBlock, IsReady=:isReady, IsPregnant=:isPregnant  WHERE TokenId=:tokenId; ";
+        try {
+            await this.ctx.model.query(sql, {
+                raw: true,
+                replacements: {
+                    birthTime: TronWeb.toDecimal(idol.birthTime._hex),
+                    generation: TronWeb.toDecimal(idol.generation._hex),
+                    cooldownIndex: TronWeb.toDecimal(idol.cooldownIndex._hex),
+                    cooldownEndBlock: TronWeb.toDecimal(idol.nextActionAt._hex),
+                    isReady: idol.isReady ? 1 : 0,
+                    isPregnant: idol.isGestating ? 1 : 0, //是否怀孕
+                    tokenId: tokenId
+                }
+            });
+        }
+        catch (err) {
+            console.error(err);
+        }
+    }
+
     async setName(tokenId, name, userId) {
         let idol = await this.ctx.model.IdolModel.findOne({ where: { TokenId: tokenId, UserId: userId } });
         if (idol == null)
@@ -325,17 +355,17 @@ class IdolService extends Service {
         const ctx = this.ctx;
         let sql;
         if (userId > 0)
-            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
+            sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
                 //+ '(SELECT GROUP_CONCAT(Attribute) FROM idolattributes WHERE idolattributes.TokenId=i.TokenId GROUP BY TokenId) AS Attributes, ' Attributes行列转换
                 //+ '(SELECT GROUP_CONCAT(Label) FROM idollabels WHERE idollabels.TokenId=i.TokenId GROUP BY TokenId) AS Labels, ' Labels行列转换
-                + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
+                + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
                 + 'FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
                 + 'LEFT OUTER JOIN users ON i.UserId = users.UserId '
                 + 'WHERE i.TokenId=:TokenId';
         else
-            sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
-                + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
+            sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
+                + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
                 + 'FROM idols '
                 + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
                 + 'WHERE TokenId=:TokenId';
@@ -345,7 +375,10 @@ class IdolService extends Service {
             let idol = idols[0];
             idol.Attributes = "smile,open mouth"; //todo
             idol.Labels = "cute,queen"; //todo
-            idol.CooldownRemain = 0; //todo
+            idol.IsReady = 0;
+            if (idol.CooldownEndBlock < this.config.currentBlockNumber)
+                idol.IsReady = 1;
+
             return idol;
         }
         return null;
@@ -365,8 +398,8 @@ class IdolService extends Service {
         //&filters=iteration:1~2,cooldown:ur|ssr|sr|r|n,price:1~2,liked:0x834721d79edcf0851505bf47c605607030b086c1
 
         const ctx = this.ctx;
-        let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, Cooldown, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount, '
-            + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental '
+        let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount, '
+            + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
             + 'FROM idols '
             + 'WHERE (0=:OwnerUserId OR UserId=:OwnerUserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
@@ -441,8 +474,9 @@ class IdolService extends Service {
             }
         }
 
-        //todo cooldownready 数据库需要记录上次生育时间
-        //cooldownEndBlock secondsPerBlock
+        if (cooldownready ==1){
+            sql += " AND CooldownEndBlock<" + this.config.currentBlockNumber;
+        }
 
         if (hasname === 1) {
             sql += " AND NickName IS NOT NULL AND NickName<>'' "
@@ -499,7 +533,7 @@ class IdolService extends Service {
 
             //冷却速度
             if (cooldowns != undefined) {
-                let sqlCooldowns = " AND Cooldown in ("
+                let sqlCooldowns = " AND CooldownIndex in ("
                 cooldowns.forEach(cooldown => {
                     let index = idolAttributes.Cooldowns.indexOf(cooldown);
                     if (index >= 0) {
@@ -511,7 +545,7 @@ class IdolService extends Service {
                 sql += sqlCooldowns;
             }
 
-            //价格
+            //价格查询 todo
 
             //昵称name
             if (name != undefined) {
@@ -559,9 +593,9 @@ class IdolService extends Service {
         sql += 'SELECT FOUND_ROWS() AS Counts; ';
         let dbset = await ctx.model.query(sql, {
             raw: true, model: ctx.model.IdolModel, replacements:
-                {
-                    OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
-                }
+            {
+                OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
+            }
         });
 
         // if (idols != null)
@@ -642,7 +676,7 @@ class IdolService extends Service {
 
     async unlike(userId, tokenId) {
         let sql = 'DELETE FROM userlikes WHERE TokenId=:TokenId AND UserId=:UserId; '
-            + 'UPDATE idols SET LikeCount=LikeCount-1 WHERE TokenId=:TokenId AND ROW_COUNT() > 0;';
+            + 'UPDATE idols SET LikeCount=LikeCount-1 WHERE TokenId=:TokenId AND LikeCount>0 AND ROW_COUNT() > 0;';
 
         let affectedRows = 0;
         let trans = await this.ctx.model.transaction();

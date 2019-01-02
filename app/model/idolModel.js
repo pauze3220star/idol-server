@@ -10,7 +10,8 @@ module.exports = app => {
         Bio: STRING,
         Pic: STRING,
         Generation: INTEGER,
-        Cooldown: INTEGER,
+        CooldownIndex: INTEGER,
+        CooldownEndBlock: INTEGER,
         HairColor: STRING,
         EyeColor: STRING,
         HairStyle: STRING,
@@ -23,6 +24,7 @@ module.exports = app => {
         StartingPrice: INTEGER,
         EndingPrice: INTEGER,
         Duration: INTEGER,
+        IsPregnant: INTEGER,
     },
         {
             timestamps: false,
