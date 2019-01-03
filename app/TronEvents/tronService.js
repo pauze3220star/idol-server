@@ -93,6 +93,12 @@ module.exports = {
         return idol;
     },
 
+    async getTotalSupply() {
+        let contract = await tronWeb.contract(kittyCore.abi, kittyCore.address);
+        let total = await contract.totalSupply().call();
+        return parseInt(total);
+    },
+
     async getAuction(tokenId) {
         let contract = await tronWeb.contract(saleAuction.abi, saleAuction.address);
         let auction = await contract.getAuction(tokenId).call();
@@ -114,10 +120,16 @@ module.exports = {
 
         //查询事件
         await tronWeb.getEventResult(contract, lastTimestamp, eventName, false, 100, 1, async (err, events) => {
-            if (err)
-                return console.error(err);
+            if (err) {
+                if (err.message != undefined)
+                    return ctx.logger.error("contract: %j, eventName: %j, error: %j", contract, eventName, err.message);
+                else
+                    return ctx.logger.error("contract: %j, eventName: %j, error: %j", contract, eventName, "The page you are looking for is temporarily unavailable.  Please try again later.");
+            }
 
             if (events && events.length > 0) {
+                ctx.logger.info("监听到事件：contract: %j, eventName: %j, events: %j", contract, eventName, events);
+
                 //保存数据
                 await dataPromise(events, ctx);
                 //更新本次监听的时间戳，第0个是最新的
@@ -161,6 +173,10 @@ module.exports = {
         //         console.log('- Events:\n' + JSON.stringify(events, null, 2), '\n');
         //     console.groupEnd();
         // });
+    },
+
+    toHex(str) {
+        return tronWeb.address.toHex(str);
     },
 
     strToHex(str) {

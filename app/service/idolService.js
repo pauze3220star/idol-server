@@ -12,7 +12,7 @@ class IdolService extends Service {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
-            console.log("IdolService.Transfer, 开始处理 tokenId:" + event.result.tokenId);
+            this.logger.info("IdolService.Transfer, 开始处理 tokenId: %j", event.result.tokenId);
 
             let to = TronWeb.address.fromHex("41" + event.result.to.substring(2));
             //创建拍卖，转给拍卖合约，不处理
@@ -58,21 +58,21 @@ class IdolService extends Service {
                 await trans.commit();
             }
             catch (err) {
-                console.error(err);
                 await trans.rollback();
+                this.logger.error("IdolService.Transfer error %j", err);
             }
 
             //affectedRows = 0，已经处理过的事件
             //affectedRows = 2，本次transfer成功
             //affectedRows = 1，日志插入成功，但update失败，说明是新的idol产生
             if (affectedRows == 0) {
-                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Processed");
+                this.logger.info("IdolService.Transfer, tokenId: %j, Processed", event.result.tokenId);
             }
             else if (affectedRows == 2) {
-                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Insert translogs success, update idols success");
+                this.logger.info("IdolService.Transfer, tokenId: %j, Insert translogs success, update idols success", event.result.tokenId);
             }
             else if (affectedRows == 1) { //新出生的情况，放到Birth事件里面处理
-                console.log("IdolService.Transfer, tokenId: " + event.result.tokenId + ", Insert translogs success, update idols failure ");
+                this.logger.info("IdolService.Transfer, tokenId: %j, Insert translogs success, update idols failure ", event.result.tokenId);
             }
         }
     }
@@ -89,7 +89,7 @@ class IdolService extends Service {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
-            console.log("IdolService.Pregnant, 开始处理 :");
+            this.logger.info("IdolService.Pregnant, 开始处理");
 
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
                 + "UPDATE idols SET IsPregnant=1, SiringWithId=:sireId, CooldownIndex=CooldownIndex+1, CooldownEndBlock=:cooldownEndBlock WHERE TokenId=:matronId AND ROW_COUNT() > 0; "
@@ -119,8 +119,8 @@ class IdolService extends Service {
                 await trans.commit();
             }
             catch (err) {
-                console.error(err);
                 await trans.rollback();
+                this.logger.error("IdolService.Transfer error %j", err);
             }
         }
     }
@@ -133,17 +133,17 @@ class IdolService extends Service {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
-            console.log("IdolService.Pregnant, 开始处理 :");
+            this.logger.info("IdolService.Birth, 开始处理");
 
             let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex("41" + event.result.owner.substring(2)));
             if (userId <= 0) {
-                console.error("Birth error: owner address error. " + JSON.stringify(event));
+                this.logger.error("Birth error: owner address error. %j", event);
                 continue;
             }
 
             let rootTokenId = await this.getRootTokenId(parseInt(event.result.matronId));
             if (rootTokenId <= 0) {
-                console.error("Birth error: matron has no rootTokenId. " + JSON.stringify(event));
+                this.logger.error("Birth error: matron has no rootTokenId. %j", event);
                 continue;
             }
 
@@ -180,8 +180,8 @@ class IdolService extends Service {
                 await trans.commit();
             }
             catch (err) {
-                console.error(err);
                 await trans.rollback();
+                this.logger.error("IdolService.Transfer error %j", err);
             }
         }
     }
@@ -204,7 +204,7 @@ class IdolService extends Service {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
-            console.log("IdolService.AuctionCreated, 开始处理 tokenId:" + event.result.tokenId);
+            this.logger.info("IdolService.AuctionCreated, 开始处理 tokenId: %j", event.result.tokenId);
 
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
             if (isSaleorRental == 1) //发起拍卖
@@ -235,8 +235,8 @@ class IdolService extends Service {
                 await trans.commit();
             }
             catch (err) {
-                console.error(err);
                 await trans.rollback();
+                this.logger.error("IdolService.Transfer error %j", err);
             }
         }
     }
@@ -250,7 +250,7 @@ class IdolService extends Service {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
-            console.log("IdolService.AuctionSuccessful, 开始处理 tokenId:" + event.result.tokenId);
+            this.logger.info("IdolService.AuctionSuccessful, 开始处理 tokenId: %j", event.result.tokenId);
 
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
             if (isSaleorRental == 1) //发起拍卖
@@ -278,8 +278,8 @@ class IdolService extends Service {
                 await trans.commit();
             }
             catch (err) {
-                console.error(err);
                 await trans.rollback();
+                this.logger.error("IdolService.Transfer error %j", err);
             }
         }
     }
@@ -291,7 +291,7 @@ class IdolService extends Service {
         for (var i = events.length; i > 0; i--) {
             let event = events[i - 1]; //第0个是最新的
 
-            console.log("IdolService.AuctionCancelled, 开始处理 tokenId:" + event.result.tokenId);
+            this.logger.info("IdolService.AuctionCancelled, 开始处理 tokenId: %j", event.result.tokenId);
 
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());';
             if (isSaleorRental == 1) //发起拍卖
@@ -318,14 +318,14 @@ class IdolService extends Service {
                 await trans.commit();
             }
             catch (err) {
-                console.error(err);
                 await trans.rollback();
+                this.logger.error("IdolService.Transfer error %j", err);
             }
         }
     }
 
     async update(tokenId, idol, address) {
-        console.log("updating tokenId = " + tokenId);
+        this.logger.info("updating tokenId = %j", tokenId);
 
         //获取ownerOf的userId
         let userId = await this.ctx.service.userService.getUserId(address);
@@ -351,7 +351,7 @@ class IdolService extends Service {
             });
         }
         catch (err) {
-            console.error(err);
+            this.logger.error("IdolService.Transfer error %j", err);
         }
     }
 
@@ -365,7 +365,7 @@ class IdolService extends Service {
     }
 
     async updateAuction(tokenId, auction, isSaleorRental) {
-        console.log("updating auction tokenId = " + tokenId);
+        this.logger.info("updating auction tokenId = %j", tokenId);
 
         //获取seller的userId
         let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex(auction.seller));
@@ -395,7 +395,7 @@ class IdolService extends Service {
             });
         }
         catch (err) {
-            console.error(err);
+            this.logger.error("IdolService.Transfer error %j", err);
         }
     }
 
@@ -436,7 +436,7 @@ class IdolService extends Service {
                 + 'FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
                 + 'LEFT OUTER JOIN users ON i.UserId = users.UserId '
-                + 'WHERE i.TokenId=:TokenId';
+                + 'WHERE i.TokenId=:TokenId AND i.`Status`=0;';
         else
             sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
                 + '(SELECT GROUP_CONCAT(Attribute) FROM idolattributes WHERE idolattributes.TokenId=idols.TokenId GROUP BY TokenId) AS Attributes, ' //Attributes行列转换
@@ -444,7 +444,7 @@ class IdolService extends Service {
                 + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
                 + 'FROM idols '
                 + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
-                + 'WHERE TokenId=:TokenId';
+                + 'WHERE TokenId=:TokenId AND idols.`Status`=0;';
 
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { TokenId: tokenId, UserId: userId } });
         if (idols != null && idols.length > 0) {
@@ -477,7 +477,7 @@ class IdolService extends Service {
         let sql = 'SELECT SQL_CALC_FOUND_ROWS TokenId, NickName, UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId, HairColor,EyeColor,HairStyle,LikeCount, '
             + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
             + 'FROM idols '
-            + 'WHERE (0=:OwnerUserId OR UserId=:OwnerUserId) '
+            + 'WHERE `Status`=0 AND (0=:OwnerUserId OR UserId=:OwnerUserId) '
             + 'AND (0=:isForSale OR IsForSale=:isForSale) '
             + 'AND (0=:isRental OR IsRental=:isRental) ';
 
@@ -758,8 +758,8 @@ class IdolService extends Service {
             await trans.commit();
         }
         catch (err) {
-            console.error(err);
             await trans.rollback();
+            this.logger.error("IdolService.Transfer error %j", err);
         }
         return affectedRows;
     }
@@ -789,8 +789,8 @@ class IdolService extends Service {
             await trans.commit();
         }
         catch (err) {
-            console.error(err);
             await trans.rollback();
+            this.logger.error("IdolService.Transfer error %j", err);
         }
         return affectedRows;
     }
