@@ -62,6 +62,28 @@ class UserController extends Controller {
             ctx.body = msg.registerError;
     }
 
+    async initIdol() {
+        let msg = message.returnObj('zh');
+        await tronService.initData(this.ctx);
+        this.ctx.body = msg.success;
+    }
+
+    async initAuction() {
+        let idols = await this.service.idolService.getAuctionIdols();
+        await idols.forEach(async idol => {
+            if (idol.UserId == 27) //拍卖合约
+            {
+                let auction = await tronService.getAuction(idol.TokenId);
+                await this.service.idolService.updateAuction(idol.TokenId, auction, 1);
+            }
+            else { //租赁合约
+                
+            }
+        });
+
+        let msg = message.returnObj('zh');
+        this.ctx.body = msg.success;
+    }
 
     async trontest() {
         const tokenId = this.ctx.request.body.tokenId;

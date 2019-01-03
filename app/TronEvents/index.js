@@ -9,7 +9,7 @@ module.exports = {
     async listen(ctx) {
         //当前区块高度
         ctx.app.config.currentBlockNumber = await tronService.getCurrentBlockNumber();
-
+        
         await idolCore.listen(ctx);
         await saleAuction.listen(ctx);
         await siringAuction.listen(ctx);

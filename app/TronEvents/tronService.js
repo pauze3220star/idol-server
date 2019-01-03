@@ -10,7 +10,7 @@ const privateKey = 'da146374a75310b9666e834ee4ad0866d6f4035967bfc76217c5a495fff9
 
 const kittyCore = require('./KittyCore.json');
 const saleAuction = require('./SaleClockAuction.json');
-const EventBus = require('../service/eventBus');
+const EventBus = require('./eventBus');
 
 const tronWeb = new TronWeb(
     fullNode,
@@ -21,13 +21,23 @@ const tronWeb = new TronWeb(
 
 module.exports = {
 
+    //初始化数据
+    async initData(ctx) {
+        for (let i = 1; i <= 13; i++) {
+            let idol = await this.getIdol(i);
+            let address = await this.ownerOf(i);
+            await ctx.service.idolService.update(i, idol, address);
+        }
+    },
+
     //监听idol更新事件
     async listenIdolUpdate() {
         EventBus.eventEmitter.on("idol_update", async (tokenId, ctx) => {
             //更新Idol
             console.log("listen event waiting_update tokenId = " + tokenId);
             let idol = await this.getIdol(tokenId);
-            await ctx.service.idolService.update(tokenId, idol);
+            let address = await this.ownerOf(tokenId);
+            await ctx.service.idolService.update(tokenId, idol, address);
         });
     },
 

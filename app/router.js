@@ -6,7 +6,7 @@ const tronService = require("./TronEvents/tronService");
  * @param {Egg.Application} app - egg application
  */
 module.exports = app => {
-  const { router, controller } = app;
+  const { router, controller, service } = app;
   router.opts.sensitive = false;
   router.get('/', controller.home.index);
 
@@ -15,6 +15,8 @@ module.exports = app => {
   router.post('/user/getUserInfo', controller.user.getUserInfo);
   router.post('/user/signtest', controller.user.signtest);
   router.post('/user/trontest', controller.user.trontest);
+  router.post('/user/initIdol', controller.user.initIdol);
+  router.post('/user/initAuction', controller.user.initAuction);
   
   router.post('/idol/setName', Passport.verify, controller.idol.setName);
   router.post('/idol/setBio', Passport.verify, controller.idol.setBio);
@@ -27,5 +29,4 @@ module.exports = app => {
   router.post('/idol/unlike', Passport.verify, controller.idol.unlike);
 
   tronService.listenIdolUpdate();
-
 };

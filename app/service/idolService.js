@@ -2,7 +2,7 @@
 const TronWeb = require('tronweb');
 const idolAttributes = require("../../config/idolAttributes");
 const Service = require('egg').Service;
-const EventBus = require('./eventBus');
+const EventBus = require('../TronEvents/eventBus');
 
 class IdolService extends Service {
     //ERC721中事件
@@ -136,15 +136,26 @@ class IdolService extends Service {
             console.log("IdolService.Pregnant, 开始处理 :");
 
             let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex("41" + event.result.owner.substring(2)));
-            if (userId <= 0)
+            if (userId <= 0) {
+                console.error("Birth error: owner address error. " + JSON.stringify(event));
                 continue;
+            }
+
+            let rootTokenId = await this.getRootTokenId(parseInt(event.result.matronId));
+            if (rootTokenId <= 0) {
+                console.error("Birth error: matron has no rootTokenId. " + JSON.stringify(event));
+                continue;
+            }
 
             let sql = 'INSERT INTO translogs(`Transaction`,`Block`,`Contract`,`EventName`,`Timestamp`,`Result`,`CreateDate`) VALUES(:Transaction,:Block,:Contract,:EventName,:Timestamp,:Result,UNIX_TIMESTAMP());'
-                + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic) SELECT :kittyId, :userId, :matronId, :sireId, "" WHERE ROW_COUNT() > 0;' //新猫出生
-                + "UPDATE idols SET IsPregnant=0, SiringWithId=0, CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; "; //母猫生育，释放出来
+                + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic, RootTokenId) SELECT :kittyId, :userId, :matronId, :sireId, Pic, :rootTokenId FROM idollist WHERE `Status`=0 AND RootTokenId=:rootTokenId AND ROW_COUNT() > 0 LIMIT 1;'
+                + 'UPDATE idollist SET `Status`=1 WHERE `Status`=0 AND RootTokenId=:rootTokenId AND ROW_COUNT() > 0 LIMIT 1;'
+                + 'UPDATE idols a INNER JOIN idols b ON a.RootTokenId=b.TokenId SET a.HairColor=b.HairColor, a.EyeColor=b.EyeColor, a.HairStyle=b.HairStyle WHERE a.TokenId=:kittyId AND ROW_COUNT() > 0;'
+                + "UPDATE idols SET IsPregnant=0, SiringWithId=0, CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; " //母猫生育，释放出来
+                + "INSERT INTO idolattributes(TokenId, Attribute) SELECT :kittyId,Attribute FROM idolattributes WHERE TokenId=:rootTokenId AND ROW_COUNT() > 0;";
 
             //更新新出生idol的BirthTime、代、cooldownIndex
-            EventBus.eventEmitter.emit("idol_update", parseInt(event.result.sireId), this.ctx);
+            EventBus.eventEmitter.emit("idol_update", parseInt(event.result.kittyId), this.ctx);
 
             let trans = await this.ctx.model.transaction();
             try {
@@ -161,7 +172,8 @@ class IdolService extends Service {
                         kittyId: parseInt(event.result.kittyId),
                         userId: userId,
                         matronId: parseInt(event.result.matronId),
-                        sireId: parseInt(event.result.sireId)
+                        sireId: parseInt(event.result.sireId),
+                        rootTokenId: rootTokenId
                     },
                     transaction: trans
                 });
@@ -172,6 +184,16 @@ class IdolService extends Service {
                 await trans.rollback();
             }
         }
+    }
+
+    async getRootTokenId(tokenId) {
+        let sql = "SELECT RootTokenId FROM idols WHERE TokenId=:tokenId";
+        let idols = await this.ctx.model.query(sql, { raw: true, model: this.ctx.model.IdolModel, replacements: { tokenId: tokenId } });
+        if (idols != null && idols.length > 0) {
+            let idol = idols[0];
+            return idol.RootTokenId;
+        }
+        return 0;
     }
 
 
@@ -302,10 +324,15 @@ class IdolService extends Service {
         }
     }
 
-    async update(tokenId, idol) {
+    async update(tokenId, idol, address) {
         console.log("updating tokenId = " + tokenId);
 
-        let sql = "UPDATE idols SET BirthTime=:birthTime, Generation=:generation, CooldownIndex=:cooldownIndex, CooldownEndBlock=:cooldownEndBlock, IsReady=:isReady, IsPregnant=:isPregnant  WHERE TokenId=:tokenId; ";
+        //获取ownerOf的userId
+        let userId = await this.ctx.service.userService.getUserId(address);
+        if (userId <= 0)
+            return;
+
+        let sql = "UPDATE idols SET UserId=:userId, BirthTime=:birthTime, Generation=:generation, CooldownIndex=:cooldownIndex, CooldownEndBlock=:cooldownEndBlock, MatronId=:matronId, SireId=:sireId, SiringWithId=:siringWithId, IsPregnant=:isPregnant WHERE TokenId=:tokenId; ";
         try {
             await this.ctx.model.query(sql, {
                 raw: true,
@@ -314,9 +341,56 @@ class IdolService extends Service {
                     generation: TronWeb.toDecimal(idol.generation._hex),
                     cooldownIndex: TronWeb.toDecimal(idol.cooldownIndex._hex),
                     cooldownEndBlock: TronWeb.toDecimal(idol.nextActionAt._hex),
-                    isReady: idol.isReady ? 1 : 0,
+                    matronId: TronWeb.toDecimal(idol.matronId._hex),
+                    sireId: TronWeb.toDecimal(idol.sireId._hex),
+                    siringWithId: TronWeb.toDecimal(idol.siringWithId._hex),
                     isPregnant: idol.isGestating ? 1 : 0, //是否怀孕
-                    tokenId: tokenId
+                    tokenId: tokenId,
+                    userId: userId
+                }
+            });
+        }
+        catch (err) {
+            console.error(err);
+        }
+    }
+
+    async getAuctionIdols() {
+        let sql = "SELECT TokenId, UserId FROM idols WHERE UserId=26 OR UserId=27 "; //27是拍卖合约，26是租赁合约
+        let idols = await this.ctx.model.query(sql, {
+            raw: true, model: this.ctx.model.IdolModel, replacements: {}
+        });
+
+        return idols;
+    }
+
+    async updateAuction(tokenId, auction, isSaleorRental) {
+        console.log("updating auction tokenId = " + tokenId);
+
+        //获取seller的userId
+        let userId = await this.ctx.service.userService.getUserId(TronWeb.address.fromHex(auction.seller));
+        if (userId <= 0)
+            return;
+
+        let sql = "UPDATE idols SET UserId=:userId,";
+
+        if (isSaleorRental == 1)
+            sql += "IsForSale=1, ";
+        else
+            sql += "IsRental=1, ";
+
+        sql += "Duration=:duration, StartingPrice=:startingPrice, EndingPrice=:endingPrice, StartedAt=:startedAt WHERE TokenId=:tokenId; ";
+
+        try {
+            await this.ctx.model.query(sql, {
+                raw: true,
+                replacements: {
+                    duration: TronWeb.toDecimal(auction.duration._hex),
+                    startingPrice: TronWeb.toDecimal(auction.startingPrice._hex),
+                    endingPrice: TronWeb.toDecimal(auction.endingPrice._hex),
+                    startedAt: TronWeb.toDecimal(auction.startedAt._hex),
+                    tokenId: tokenId,
+                    userId: userId
                 }
             });
         }
@@ -356,8 +430,8 @@ class IdolService extends Service {
         let sql;
         if (userId > 0)
             sql = 'SELECT i.TokenId, NickName, i.UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId,ul.Id AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
-                //+ '(SELECT GROUP_CONCAT(Attribute) FROM idolattributes WHERE idolattributes.TokenId=i.TokenId GROUP BY TokenId) AS Attributes, ' Attributes行列转换
-                //+ '(SELECT GROUP_CONCAT(Label) FROM idollabels WHERE idollabels.TokenId=i.TokenId GROUP BY TokenId) AS Labels, ' Labels行列转换
+                + '(SELECT GROUP_CONCAT(Attribute) FROM idolattributes WHERE idolattributes.TokenId=i.TokenId GROUP BY TokenId) AS Attributes, ' //Attributes行列转换
+                //+ '(SELECT GROUP_CONCAT(Label) FROM idollabels WHERE idollabels.TokenId=i.TokenId GROUP BY TokenId) AS Labels, ' //Labels行列转换
                 + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
                 + 'FROM idols i '
                 + 'LEFT OUTER JOIN userlikes ul ON i.TokenId=ul.TokenId AND ul.UserId=:UserId '
@@ -365,6 +439,8 @@ class IdolService extends Service {
                 + 'WHERE i.TokenId=:TokenId';
         else
             sql = 'SELECT TokenId, NickName, idols.UserId, Genes, BirthTime, Bio, Generation, Pic, CooldownIndex, CooldownEndBlock, MatronId, SireId, 0 AS LikeId, HairColor,EyeColor,HairStyle,LikeCount,users.Address,users.UserName, '
+                + '(SELECT GROUP_CONCAT(Attribute) FROM idolattributes WHERE idolattributes.TokenId=idols.TokenId GROUP BY TokenId) AS Attributes, ' //Attributes行列转换
+                //+ '(SELECT GROUP_CONCAT(Label) FROM idollabels WHERE idollabels.TokenId=i.TokenId GROUP BY TokenId) AS Labels, ' //Labels行列转换    
                 + 'IsForSale,StartedAt,StartingPrice,EndingPrice,Duration,IsRental,IsPregnant '
                 + 'FROM idols '
                 + 'LEFT OUTER JOIN users ON idols.UserId = users.UserId '
@@ -373,8 +449,8 @@ class IdolService extends Service {
         let idols = await ctx.model.query(sql, { raw: true, model: ctx.model.IdolModel, replacements: { TokenId: tokenId, UserId: userId } });
         if (idols != null && idols.length > 0) {
             let idol = idols[0];
-            idol.Attributes = "smile,open mouth"; //todo
-            idol.Labels = "cute,queen"; //todo
+            //idol.Attributes = "smile,open mouth"; //todo
+            //idol.Labels = "cute,queen"; //todo
             idol.IsReady = 0;
             if (idol.CooldownEndBlock < this.config.currentBlockNumber)
                 idol.IsReady = 1;
@@ -474,7 +550,7 @@ class IdolService extends Service {
             }
         }
 
-        if (cooldownready ==1){
+        if (cooldownready == 1) {
             sql += " AND CooldownEndBlock<" + this.config.currentBlockNumber;
         }
 
@@ -533,16 +609,36 @@ class IdolService extends Service {
 
             //冷却速度
             if (cooldowns != undefined) {
-                let sqlCooldowns = " AND CooldownIndex in ("
+                let sqlCooldowns = " AND CooldownIndex in (";
+                let indexs = "";
                 cooldowns.forEach(cooldown => {
                     let index = idolAttributes.Cooldowns.indexOf(cooldown);
                     if (index >= 0) {
-                        sqlCooldowns += index + ",";
+                        switch (cooldown) {
+                            //"ur", "ssr", "sr", "r", "n"
+                            case "ur":
+                                indexs += "0,1,2,3,";
+                                break;
+                            case "ssr":
+                                indexs += "4,5,6,";
+                                break;
+                            case "sr":
+                                indexs += "7,8,9,";
+                                break;
+                            case "r":
+                                indexs += "10,11,";
+                                break;
+                            case "n":
+                                indexs += "12,13,";
+                                break;
+                        }
                     }
                 });
-                sqlCooldowns = sqlCooldowns.substring(0, sqlCooldowns.lastIndexOf(","));
-                sqlCooldowns += ") ";
-                sql += sqlCooldowns;
+                if (indexs.length > 0) {
+                    sqlCooldowns += indexs.substring(0, indexs.lastIndexOf(","));
+                    sqlCooldowns += ") ";
+                    sql += sqlCooldowns;
+                }
             }
 
             //价格查询 todo
@@ -589,7 +685,7 @@ class IdolService extends Service {
                 break;
         }
 
-        sql += 'LIMIT :offset, :limit; ';
+        sql += ' LIMIT :offset, :limit; ';
         sql += 'SELECT FOUND_ROWS() AS Counts; ';
         let dbset = await ctx.model.query(sql, {
             raw: true, model: ctx.model.IdolModel, replacements:
@@ -597,12 +693,6 @@ class IdolService extends Service {
                 OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
             }
         });
-
-        // if (idols != null)
-        //     idols.forEach(idol => {
-        //         idol.Attributes = "smile,open mouth";
-        //         idol.Labels = "cute,queen";
-        //     });
 
         let idols = [];
         let count = 0;
