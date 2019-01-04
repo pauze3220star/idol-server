@@ -18,11 +18,12 @@ class TronController extends Controller {
         await idols.forEach(async idol => {
             if (idol.UserId == 27) //拍卖合约
             {
-                let auction = await tronService.getAuction(idol.TokenId);
+                let auction = await tronService.getSaleAuction(idol.TokenId);
                 await this.service.idolService.updateAuction(idol.TokenId, auction, 1);
             }
             else { //租赁合约
-
+                let auction = await tronService.getSiringAuction(idol.TokenId);
+                await this.service.idolService.updateAuction(idol.TokenId, auction, 2);
             }
         });
 
@@ -68,8 +69,6 @@ class TronController extends Controller {
         let b = await tronService.getKitty(tokenId);
 
         let auction1 = await tronService.bid(tokenId);
-
-        let auction = await tronService.getAuction(tokenId);
 
         this.ctx.body = auction;
     }

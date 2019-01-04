@@ -23,7 +23,7 @@ module.exports = appInfo => {
   };
 
   config.cors = {
-    origin: 'http://localhost:8081',
+    origin: 'https://tron.linkidol.pro',
     allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
     credentials: true
   };
@@ -53,13 +53,13 @@ module.exports = appInfo => {
   // 请修改数据库配置
   config.sequelize = {
     dialect: 'mysql',
-    hostname: '47.100.77.82',
-    host: '47.100.77.82',
+    hostname: '',
+    host: '',
     port: 3306,
-    database: 'andromeda_idol',
-    username: 'andoromeda',
+    database: '',
+    username: '',
     // 密码
-    password: 'GKuLy8ereycO',
+    password: '',
     dialectOptions: {
       multipleStatements: true,
     },

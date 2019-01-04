@@ -10,6 +10,7 @@ const privateKey = 'da146374a75310b9666e834ee4ad0866d6f4035967bfc76217c5a495fff9
 
 const kittyCore = require('./KittyCore.json');
 const saleAuction = require('./SaleClockAuction.json');
+const siringAuction = require('./SiringClockAuction.json');
 const EventBus = require('./eventBus');
 
 const tronWeb = new TronWeb(
@@ -23,7 +24,8 @@ module.exports = {
 
     //初始化数据
     async initData(ctx) {
-        for (let i = 1; i <= 13; i++) {
+        let total = await this.getTotalSupply();
+        for (let i = 1; i <= total; i++) {
             let idol = await this.getIdol(i);
             let address = await this.ownerOf(i);
             await ctx.service.idolService.update(i, idol, address);
@@ -99,8 +101,14 @@ module.exports = {
         return parseInt(total);
     },
 
-    async getAuction(tokenId) {
+    async getSaleAuction(tokenId) {
         let contract = await tronWeb.contract(saleAuction.abi, saleAuction.address);
+        let auction = await contract.getAuction(tokenId).call();
+        return auction;
+    },
+
+    async getSiringAuction(tokenId) {
+        let contract = await tronWeb.contract(siringAuction.abi, siringAuction.address);
         let auction = await contract.getAuction(tokenId).call();
         return auction;
     },
