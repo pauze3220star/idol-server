@@ -151,7 +151,7 @@ class IdolService extends Service {
                 + 'INSERT INTO idols(TokenId, UserId, MatronId, SireId, Pic, RootTokenId) SELECT :kittyId, :userId, :matronId, :sireId, Pic, :rootTokenId FROM idollist WHERE `Status`=0 AND RootTokenId=:rootTokenId AND ROW_COUNT() > 0 LIMIT 1;'
                 + 'UPDATE idollist SET `Status`=1 WHERE `Status`=0 AND RootTokenId=:rootTokenId AND ROW_COUNT() > 0 LIMIT 1;'
                 + 'UPDATE idols a INNER JOIN idols b ON a.RootTokenId=b.TokenId SET a.HairColor=b.HairColor, a.EyeColor=b.EyeColor, a.HairStyle=b.HairStyle WHERE a.TokenId=:kittyId AND ROW_COUNT() > 0;'
-                + "UPDATE idols SET IsPregnant=0, SiringWithId=0, CooldownEndBlock=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; " //母猫生育，释放出来
+                + "UPDATE idols SET IsPregnant=0, SiringWithId=0 WHERE TokenId=:matronId AND ROW_COUNT() > 0; " //母猫生育，释放出来
                 + "INSERT INTO idolattributes(TokenId, Attribute) SELECT :kittyId,Attribute FROM idolattributes WHERE TokenId=:rootTokenId AND ROW_COUNT() > 0;";
 
             //更新新出生idol的BirthTime、代、cooldownIndex
@@ -565,6 +565,7 @@ class IdolService extends Service {
         //todo characteristics 特征
 
 
+        let name = "";
         //代，冷却速度，价格，like
         if (filters != undefined) {
             let conditions = filters.split(",");
@@ -575,9 +576,8 @@ class IdolService extends Service {
             let priceStart = 0;
             let priceEnd;
             let likeAddress;
-            let name;
-
-            for (var i = 1; i < conditions.length; i++) {
+            
+            for (var i = 0; i < conditions.length; i++) {
                 var conditionX = conditions[i].split(":");
                 switch (conditionX[0]) {
                     case "iteration":
@@ -690,7 +690,7 @@ class IdolService extends Service {
         let dbset = await ctx.model.query(sql, {
             raw: true, model: ctx.model.IdolModel, replacements:
             {
-                OwnerUserId: ownerUserId, UserId: userId, isForSale, isRental, offset, limit
+                OwnerUserId: ownerUserId, UserId: userId, NickName: name, isForSale, isRental, offset, limit
             }
         });
 
