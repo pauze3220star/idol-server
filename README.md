@@ -43,6 +43,7 @@ $ npm stop
 - 创建数据库名：qiang_cow，执行qiang_cow.sql脚本，即可还原整个库，这是抢庄牛牛的游戏数据库
 - dragon_tiger.sql、fish.sql 是另外两款游戏的数据库，应该可以不用创建
 - 根据LobbyServer\receipt.js文件创建新账号并授权
+
 创建新账号：
 ~~~
 create user 'gamedb'@'%' IDENTIFIED BY '112233'
