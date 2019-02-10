@@ -100,6 +100,10 @@ npm install
 // };
 ~~~
 - 注释掉log4js相关代码，GameServer\CClass\class\loginfo.js
+- GameServer\cowserver_qianzhuang\app.js有LobbyServer地址，两个程序在同一台运行则不用修改
+~~~
+var Csocket = Cio("http://localhost:13000");
+~~~
 - npm包、数据库、log4js、https证书几处完成PowerShell中执行node app.js应该就成功了，会提示：
 ~~~
 牛牛游戏服务器启动
