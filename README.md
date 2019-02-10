@@ -37,7 +37,8 @@ $ npm stop
 ## 安装服务器
 - LobbyServer为平台服务器，首先把LobbyServer运行起来，Lobby监听13000端口；GameServer/cowserver_qianzhuang为牛牛游戏服务器，运行后与Lobby服务器建立连接，并为client端提供服务
 
-1. 安装数据库，数据库为MySQL，可以使用mysql-5.7.24版本，使用默认的3306端口，安装完成后设置root密码
+### 1. 安装数据库
+- 数据库为MySQL，可以使用mysql-5.7.24版本，使用默认的3306端口，安装完成后设置root密码
 - gameaccount.sql，创建数据库名：gameaccount，执行ameaccount.sql脚本，即可还原整个库，这是账号、充值、计费等平台相关数据库
 - qiang_cow.sql，创建数据库名：qiang_cow，执行qiang_cow.sql脚本，即可还原整个库，这是抢庄牛牛的游戏数据库
 - dragon_tiger.sql、fish.sql 是另外两款游戏的数据库，应该可以不用创建
@@ -52,7 +53,7 @@ grant ALL on gameaccount.* to 'gamedb'@'%';
 grant ALL on qiang_cow.* to 'gamedb'@'%';
 ~~~
 
-2. LobbyServer运行步骤
+### 2. LobbyServer运行步骤
 - 在LobbyServer目录下安装npm包
 ~~~
 npm install
@@ -81,7 +82,7 @@ log4js
 - npm包、数据库、log4js、https证书几处完成再次执行start.bat应该就成功了
 - pm2 list查看当前运行状态，显示online则正在运行
 
-3. GameServer\cowserver_qianzhuang运行步骤：
+### 3. GameServer\cowserver_qianzhuang运行步骤：
 - 在GameServer\cowserver_qianzhuang目录安装npm包
 ~~~
 npm install
