@@ -65,13 +65,15 @@ npm install pm2 -g
 ~~~
 - 修改数据库配置LobbyServer\dao\dao.js，修改password，另一处LobbyServer\receipt.js使用gamedb账号，上面已经创建了，这里不用修改代码
 - 此时执行start.bat会报错，cmd窗口会提示错误日志文件位置，通过日志查看缺少的npm包，逐一安装（可能还有其它，没有完全记录下来）：
-express
-urlencode
-multer
-consolidate
-express-static
-eosws
-log4js
+~~~
+npm install express
+npm install urlencode
+npm install multer
+npm install consolidate
+npm install express-static
+npm install eosws
+npm install log4js
+~~~
 注：安装了log4js后仍然会报错，先把LobbyServer\class\loginfo.js log4js相关的代码注释掉，这是记录日志的，不会影响系统运行，回头把这块重新调试好
 - 注释掉https证书相关配置，LobbyServer\app.js
 ~~~ javascript
