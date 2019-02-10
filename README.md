@@ -39,8 +39,8 @@ $ npm stop
 
 ### 1. 安装数据库
 - 数据库为MySQL，可以使用mysql-5.7.24版本，使用默认的3306端口，安装完成后设置root密码
-- gameaccount.sql，创建数据库名：gameaccount，执行ameaccount.sql脚本，即可还原整个库，这是账号、充值、计费等平台相关数据库
-- qiang_cow.sql，创建数据库名：qiang_cow，执行qiang_cow.sql脚本，即可还原整个库，这是抢庄牛牛的游戏数据库
+- 创建数据库名：gameaccount，执行ameaccount.sql脚本，即可还原整个库，这是账号、充值、计费等平台相关数据库
+- 创建数据库名：qiang_cow，执行qiang_cow.sql脚本，即可还原整个库，这是抢庄牛牛的游戏数据库
 - dragon_tiger.sql、fish.sql 是另外两款游戏的数据库，应该可以不用创建
 - 根据LobbyServer\receipt.js文件创建新账号并授权
 创建新账号：
