@@ -23,7 +23,6 @@ redpacket_userlog
 https://git.coding.net/xiaomin-ontology/candybox-server.git 
 dapp_dev分支
 
-* 安装运营：
 ```bash
 $ npm install
 开发环境
@@ -36,7 +35,6 @@ $ npm stop
 ### 前端部署
 * 代码地址
 https://git.coding.net/xinhuadx/candybox-web.git
-
 
 ```bash
 $ yarn install
