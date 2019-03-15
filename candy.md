@@ -22,9 +22,15 @@ redpacket_userlog
 * 代码：
 https://git.coding.net/xiaomin-ontology/candybox-server.git 
 dapp_dev分支
+
+* 安装运营：
 ```bash
-$ npm i
+$ npm install
+开发环境
 $ npm run dev
+生产环境
+$ npm start
+$ npm stop
 ```
 
 ### 前端部署
